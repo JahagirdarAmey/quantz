@@ -1,0 +1,1019 @@
+openapi: 3.0.3
+info:
+  title: Quant Application Backtest API
+  description: API for backtesting trading strategies in a quantitative finance application
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@quantapp.example.com
+servers:
+  - url: https://api.quantapp.example.com/v1
+    description: Production server
+  - url: https://staging-api.quantapp.example.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Local development
+
+tags:
+  - name: backtest
+    description: Endpoints for running and managing backtests
+  - name: strategies
+    description: Trading strategy management
+  - name: instruments
+    description: Financial instruments data
+  - name: results
+    description: Backtest results and analytics
+
+paths:
+  /backtest:
+    post:
+      summary: Create and run a new backtest
+      description: Initiates a new backtest using the specified strategy, parameters, and market data
+      operationId: createBacktest
+      tags:
+        - backtest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestRequest'
+      responses:
+        '202':
+          description: Backtest successfully queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestCreationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too many requests
+    get:
+      summary: List all backtests
+      description: Returns a list of all backtests for the authenticated user
+      operationId: listBacktests
+      tags:
+        - backtest
+      parameters:
+        - name: status
+          in: query
+          description: Filter backtests by status
+          schema:
+            type: string
+            enum: [pending, running, completed, failed]
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of backtests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backtests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BacktestSummary'
+                  total:
+                    type: integer
+                    description: Total number of backtests
+                  limit:
+                    type: integer
+                    description: Limit used for pagination
+                  offset:
+                    type: integer
+                    description: Offset used for pagination
+        '401':
+          description: Unauthorized
+
+  /backtest/{backtestId}:
+    get:
+      summary: Get backtest details
+      description: Returns detailed information about a specific backtest
+      operationId: getBacktest
+      tags:
+        - backtest
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed backtest information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestDetail'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Cancel or delete a backtest
+      description: Cancels a running backtest or deletes a completed backtest
+      operationId: deleteBacktest
+      tags:
+        - backtest
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Backtest successfully cancelled or deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Cannot delete the backtest in its current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /backtest/{backtestId}/results:
+    get:
+      summary: Get backtest results
+      description: Retrieves the performance metrics and trade history for a completed backtest
+      operationId: getBacktestResults
+      tags:
+        - results
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+        - name: includeTradeHistory
+          in: query
+          description: Whether to include detailed trade history
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Backtest results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResults'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found or results not yet available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /strategies:
+    get:
+      summary: List available strategies
+      description: Returns a list of trading strategies available for backtesting
+      operationId: listStrategies
+      tags:
+        - strategies
+      responses:
+        '200':
+          description: List of available strategies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strategies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Strategy'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new strategy
+      description: Creates a new custom trading strategy
+      operationId: createStrategy
+      tags:
+        - strategies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyCreationRequest'
+      responses:
+        '201':
+          description: Strategy successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+
+  /strategies/{strategyId}:
+    get:
+      summary: Get strategy details
+      description: Returns detailed information about a specific strategy
+      operationId: getStrategy
+      tags:
+        - strategies
+      parameters:
+        - name: strategyId
+          in: path
+          required: true
+          description: ID of the strategy
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed strategy information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Strategy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /instruments:
+    get:
+      summary: List available financial instruments
+      description: Returns a list of financial instruments available for backtesting
+      operationId: listInstruments
+      tags:
+        - instruments
+      parameters:
+        - name: type
+          in: query
+          description: Filter instruments by type
+          schema:
+            type: string
+            enum: [stock, etf, forex, crypto, futures, options]
+        - name: exchange
+          in: query
+          description: Filter instruments by exchange
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Search term for finding instruments
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of instruments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instruments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Instrument'
+                  total:
+                    type: integer
+                    description: Total number of instruments matching criteria
+                  limit:
+                    type: integer
+                    description: Limit used for pagination
+                  offset:
+                    type: integer
+                    description: Offset used for pagination
+        '401':
+          description: Unauthorized
+
+  /instruments/{instrumentId}/data:
+    get:
+      summary: Get historical data for an instrument
+      description: Returns historical price and volume data for a specific instrument
+      operationId: getInstrumentData
+      tags:
+        - instruments
+      parameters:
+        - name: instrumentId
+          in: path
+          required: true
+          description: ID of the instrument
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: true
+          description: Start date for historical data (ISO format)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: End date for historical data (ISO format)
+          schema:
+            type: string
+            format: date
+        - name: interval
+          in: query
+          description: Data interval
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1mo]
+            default: 1d
+      responses:
+        '200':
+          description: Historical instrument data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstrumentData'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Instrument not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    BacktestRequest:
+      type: object
+      required:
+        - strategyId
+        - startDate
+        - endDate
+        - instruments
+        - initialCapital
+      properties:
+        strategyId:
+          type: string
+          format: uuid
+          description: ID of the strategy to backtest
+        strategyConfig:
+          type: object
+          description: Configuration parameters for the strategy
+          additionalProperties: true
+        startDate:
+          type: string
+          format: date
+          description: Start date for the backtest
+        endDate:
+          type: string
+          format: date
+          description: End date for the backtest
+        instruments:
+          type: array
+          description: List of instruments to include in the backtest
+          items:
+            type: string
+        initialCapital:
+          type: number
+          format: float
+          description: Initial capital for the backtest
+          minimum: 0
+        commission:
+          type: number
+          format: float
+          description: Commission rate per trade
+          default: 0.001
+          minimum: 0
+        slippage:
+          type: number
+          format: float
+          description: Slippage model parameter
+          default: 0.0005
+          minimum: 0
+        dataInterval:
+          type: string
+          enum: [1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1mo]
+          default: 1d
+          description: Data interval for the backtest
+        name:
+          type: string
+          description: Custom name for the backtest
+
+    BacktestCreationResponse:
+      type: object
+      required:
+        - backtestId
+        - status
+      properties:
+        backtestId:
+          type: string
+          format: uuid
+          description: ID of the created backtest
+        status:
+          type: string
+          enum: [pending, running]
+          description: Status of the backtest
+        estimatedCompletionTime:
+          type: string
+          format: date-time
+          description: Estimated time for backtest completion
+
+    BacktestSummary:
+      type: object
+      required:
+        - backtestId
+        - strategyId
+        - status
+        - createdAt
+      properties:
+        backtestId:
+          type: string
+          format: uuid
+          description: ID of the backtest
+        name:
+          type: string
+          description: Custom name of the backtest
+        strategyId:
+          type: string
+          format: uuid
+          description: ID of the strategy used
+        strategyName:
+          type: string
+          description: Name of the strategy
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+          description: Status of the backtest
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the backtest was created
+        completedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the backtest completed (if applicable)
+        startDate:
+          type: string
+          format: date
+          description: Start date of the backtest
+        endDate:
+          type: string
+          format: date
+          description: End date of the backtest
+        instruments:
+          type: array
+          items:
+            type: string
+          description: List of instruments included in the backtest
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetricsSummary'
+
+    BacktestDetail:
+      allOf:
+        - $ref: '#/components/schemas/BacktestSummary'
+        - type: object
+          properties:
+            strategyConfig:
+              type: object
+              description: Configuration used for the strategy
+              additionalProperties: true
+            initialCapital:
+              type: number
+              format: float
+              description: Initial capital used for the backtest
+            commission:
+              type: number
+              format: float
+              description: Commission rate used
+            slippage:
+              type: number
+              format: float
+              description: Slippage model parameter used
+            dataInterval:
+              type: string
+              enum: [1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1mo]
+              description: Data interval used for the backtest
+            errorMessage:
+              type: string
+              description: Error message if the backtest failed
+
+    BacktestResults:
+      type: object
+      required:
+        - backtestId
+        - metrics
+        - equityCurve
+      properties:
+        backtestId:
+          type: string
+          format: uuid
+          description: ID of the backtest
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        equityCurve:
+          type: array
+          description: Equity curve data points
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              equity:
+                type: number
+                format: float
+        drawdowns:
+          type: array
+          description: Major drawdown periods
+          items:
+            type: object
+            properties:
+              startDate:
+                type: string
+                format: date-time
+              endDate:
+                type: string
+                format: date-time
+              durationDays:
+                type: number
+                format: float
+              depthPercent:
+                type: number
+                format: float
+              recoveryDays:
+                type: number
+                format: float
+        monthlyReturns:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: Returns by month (key format YYYY-MM)
+        tradeHistory:
+          type: array
+          description: History of all trades (only included if requested)
+          items:
+            $ref: '#/components/schemas/Trade'
+        positionTimeline:
+          type: array
+          description: Timeline of position changes
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              positions:
+                type: object
+                additionalProperties:
+                  type: number
+                  format: float
+
+    PerformanceMetricsSummary:
+      type: object
+      description: Summary of key performance metrics
+      properties:
+        totalReturn:
+          type: number
+          format: float
+          description: Total return percentage
+        annualizedReturn:
+          type: number
+          format: float
+          description: Annualized return percentage
+        sharpeRatio:
+          type: number
+          format: float
+          description: Sharpe ratio
+        maxDrawdown:
+          type: number
+          format: float
+          description: Maximum drawdown percentage
+
+    PerformanceMetrics:
+      allOf:
+        - $ref: '#/components/schemas/PerformanceMetricsSummary'
+        - type: object
+          properties:
+            sortinoRatio:
+              type: number
+              format: float
+              description: Sortino ratio
+            calmarRatio:
+              type: number
+              format: float
+              description: Calmar ratio
+            volatility:
+              type: number
+              format: float
+              description: Annualized volatility
+            beta:
+              type: number
+              format: float
+              description: Beta relative to benchmark
+            alpha:
+              type: number
+              format: float
+              description: Alpha (annualized)
+            winRate:
+              type: number
+              format: float
+              description: Winning trades percentage
+            profitFactor:
+              type: number
+              format: float
+              description: Profit factor
+            maxConsecutiveWins:
+              type: integer
+              description: Maximum consecutive winning trades
+            maxConsecutiveLosses:
+              type: integer
+              description: Maximum consecutive losing trades
+            averageWin:
+              type: number
+              format: float
+              description: Average winning trade percentage
+            averageLoss:
+              type: number
+              format: float
+              description: Average losing trade percentage
+            averageTradeLength:
+              type: number
+              format: float
+              description: Average trade duration in days
+            totalTrades:
+              type: integer
+              description: Total number of trades
+            exposureTime:
+              type: number
+              format: float
+              description: Percentage of time with market exposure
+
+    Trade:
+      type: object
+      required:
+        - tradeId
+        - instrument
+        - entryDate
+        - entryPrice
+        - direction
+      properties:
+        tradeId:
+          type: string
+          format: uuid
+          description: Unique ID for the trade
+        instrument:
+          type: string
+          description: Instrument identifier
+        entryDate:
+          type: string
+          format: date-time
+          description: Entry timestamp
+        entryPrice:
+          type: number
+          format: float
+          description: Entry price
+        entryReason:
+          type: string
+          description: Signal or reason for entry
+        exitDate:
+          type: string
+          format: date-time
+          description: Exit timestamp (if closed)
+        exitPrice:
+          type: number
+          format: float
+          description: Exit price (if closed)
+        exitReason:
+          type: string
+          description: Signal or reason for exit
+        direction:
+          type: string
+          enum: [long, short]
+          description: Trade direction
+        quantity:
+          type: number
+          format: float
+          description: Trade size/quantity
+        profitLoss:
+          type: number
+          format: float
+          description: Profit/loss amount (if closed)
+        profitLossPercent:
+          type: number
+          format: float
+          description: Profit/loss percentage (if closed)
+        commission:
+          type: number
+          format: float
+          description: Commission paid
+
+    Strategy:
+      type: object
+      required:
+        - strategyId
+        - name
+        - type
+      properties:
+        strategyId:
+          type: string
+          format: uuid
+          description: Unique ID for the strategy
+        name:
+          type: string
+          description: Strategy name
+        description:
+          type: string
+          description: Strategy description
+        type:
+          type: string
+          enum: [built-in, custom]
+          description: Strategy type
+        category:
+          type: string
+          enum: [trend-following, mean-reversion, momentum, statistical-arbitrage, market-making, options, machine-learning]
+          description: Strategy category
+        parameters:
+          type: array
+          description: Available strategy parameters
+          items:
+            type: object
+            required:
+              - name
+              - type
+            properties:
+              name:
+                type: string
+                description: Parameter name
+              type:
+                type: string
+                enum: [integer, float, boolean, string, enum]
+                description: Parameter data type
+              description:
+                type: string
+                description: Parameter description
+              default:
+                description: Default value
+              min:
+                description: Minimum value (for numeric types)
+              max:
+                description: Maximum value (for numeric types)
+              options:
+                type: array
+                description: Available options (for enum type)
+                items:
+                  type: string
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (for custom strategies)
+        source:
+          type: string
+          description: Strategy code or logic (for custom strategies)
+
+    StrategyCreationRequest:
+      type: object
+      required:
+        - name
+        - source
+      properties:
+        name:
+          type: string
+          description: Strategy name
+        description:
+          type: string
+          description: Strategy description
+        source:
+          type: string
+          description: Strategy code or logic in the platform's supported language
+        parameters:
+          type: array
+          description: Strategy parameters definition
+          items:
+            type: object
+            required:
+              - name
+              - type
+            properties:
+              name:
+                type: string
+                description: Parameter name
+              type:
+                type: string
+                enum: [integer, float, boolean, string, enum]
+                description: Parameter data type
+              description:
+                type: string
+                description: Parameter description
+              default:
+                description: Default value
+              min:
+                description: Minimum value (for numeric types)
+              max:
+                description: Maximum value (for numeric types)
+              options:
+                type: array
+                description: Available options (for enum type)
+                items:
+                  type: string
+
+    Instrument:
+      type: object
+      required:
+        - id
+        - symbol
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the instrument
+        symbol:
+          type: string
+          description: Trading symbol
+        name:
+          type: string
+          description: Full name
+        type:
+          type: string
+          enum: [stock, etf, forex, crypto, futures, options]
+          description: Instrument type
+        exchange:
+          type: string
+          description: Exchange where the instrument is traded
+        currency:
+          type: string
+          description: Base currency
+        dataAvailable:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date
+              description: Earliest date with available data
+            endDate:
+              type: string
+              format: date
+              description: Latest date with available data
+            intervals:
+              type: array
+              items:
+                type: string
+                enum: [1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1mo]
+              description: Available data intervals
+        meta:
+          type: object
+          description: Additional metadata
+          additionalProperties: true
+
+    InstrumentData:
+      type: object
+      required:
+        - instrumentId
+        - interval
+        - data
+      properties:
+        instrumentId:
+          type: string
+          description: Instrument identifier
+        symbol:
+          type: string
+          description: Instrument symbol
+        interval:
+          type: string
+          enum: [1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1mo]
+          description: Data interval
+        startDate:
+          type: string
+          format: date
+          description: Start date of the data
+        endDate:
+          type: string
+          format: date
+          description: End date of the data
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - timestamp
+              - open
+              - high
+              - low
+              - close
+              - volume
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                description: Bar timestamp
+              open:
+                type: number
+                format: float
+                description: Opening price
+              high:
+                type: number
+                format: float
+                description: Highest price
+              low:
+                type: number
+                format: float
+                description: Lowest price
+              close:
+                type: number
+                format: float
+                description: Closing price
+              volume:
+                type: number
+                format: float
+                description: Trading volume
+              adjustedClose:
+                type: number
+                format: float
+                description: Adjusted closing price
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
