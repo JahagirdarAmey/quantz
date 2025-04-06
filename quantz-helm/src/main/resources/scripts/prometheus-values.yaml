@@ -1,0 +1,119 @@
+# Prometheus Helm chart values for local development
+# Path: helm-values/prometheus-values.yaml
+
+## Prometheus server configurations
+server:
+  ## Prometheus server container image
+  ##
+  image:
+    repository: quay.io/prometheus/prometheus
+    tag: v2.42.0
+
+  ## Resource limits & requests
+  ##
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  ## Persistence storage configuration
+  ##
+  persistentVolume:
+    enabled: true
+    size: 2Gi
+
+  ## Configuration for retention and storage
+  ##
+  retention: "24h"
+  retentionSize: "1GB"
+
+  ## Additional server arguments
+  ##
+  extraFlags:
+    - web.enable-lifecycle
+    - web.enable-admin-api
+
+## Alertmanager configuration
+##
+alertmanager:
+  enabled: true
+  persistentVolume:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+## Node exporter configuration
+##
+nodeExporter:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+## kube-state-metrics configuration
+##
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+## Service configuration
+##
+service:
+  type: ClusterIP
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+
+## Create default rules for monitoring the cluster
+##
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubePrometheusNodeAlerting: true
+    kubePrometheusNodeRecording: true
+    kubernetesAbsent: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    node: true
+    prometheus: true
+    prometheusOperator: true
+
+## ServiceMonitor configuration
+##
+serviceMonitors:
+  - name: spring-boot
+    selector:
+      matchLabels:
+        app: spring-boot-app
+    endpoints:
+      - port: metrics
+        interval: 15s
+        path: /actuator/prometheus
+    namespaceSelector:
+      any: true

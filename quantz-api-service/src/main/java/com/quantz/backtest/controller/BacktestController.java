@@ -7,6 +7,7 @@ import com.quantz.backtest.model.BacktestRequest;
 import com.quantz.backtest.model.ListBacktests200Response;
 import com.quantz.backtest.service.BacktestService;
 import jakarta.validation.constraints.Max;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +26,13 @@ public class BacktestController implements BacktestApi {
 
     @Override
     public ResponseEntity<BacktestCreationResponse> createBacktest(BacktestRequest backtestRequest) {
-        BacktestCreationResponse response = backtestService.createBacktest(backtestRequest);
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        BacktestCreationResponse response = null;
+        try {
+            response = backtestService.createBacktest(backtestRequest);
+            return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        } catch (BadRequestException e) {
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Override

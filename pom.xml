@@ -37,6 +37,7 @@
         <module>quantz-web</module>
         <module>quantz-notification</module>
         <module>quantz-observability</module>
+        <module>quantz-helm</module>
     </modules>
 
     <dependencyManagement>

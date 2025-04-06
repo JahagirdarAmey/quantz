@@ -1,0 +1,83 @@
+# Kafka Helm chart values for local development
+# Path: helm-values/kafka-values.yaml
+
+## Global parameters
+global:
+  storageClass: ""
+
+## Bitnami Kafka image version
+## ref: https://hub.docker.com/r/bitnami/kafka/tags/
+##
+image:
+  registry: docker.io
+  repository: bitnami/kafka
+  tag: 3.3.1-debian-11-r0
+
+## Set to true if you want to enable auto-creation of topics
+##
+autoCreateTopicsEnable: true
+allowPlaintextListener: true
+deleteTopicEnable: true
+
+## Number of Kafka brokers
+replicaCount: 1
+
+## For local development, disable persistence to avoid PV issues
+persistence:
+  enabled: true
+  size: 1Gi
+
+## Kafka configuration
+## ref: https://kafka.apache.org/documentation/#configuration
+##
+config:
+  offsets.topic.replication.factor: 1
+  transaction.state.log.replication.factor: 1
+  transaction.state.log.min.isr: 1
+  default.replication.factor: 1
+  min.insync.replicas: 1
+  num.partitions: 3
+
+## Resource configs for Kafka node(s)
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 200m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+## Kafka JMX configuration
+jmx:
+  enabled: true
+
+## Kafka JVM settings
+heapOpts: "-Xmx512m -Xms256m"
+
+## Prometheus JMX Exporter configuration
+metrics:
+  kafka:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+      interval: 30s
+
+## External access
+externalAccess:
+  enabled: false  # For local dev, not needed
+
+## Add zookeeper configuration (only needed for local dev)
+zookeeper:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 250m

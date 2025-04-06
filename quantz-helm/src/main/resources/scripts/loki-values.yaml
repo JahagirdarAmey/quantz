@@ -1,0 +1,90 @@
+# Loki Helm chart values for local development
+# Path: helm-values/loki-values.yaml
+
+## Loki image version
+## ref: https://hub.docker.com/r/grafana/loki/tags/
+##
+image:
+  repository: grafana/loki
+  tag: 2.8.2
+  pullPolicy: IfNotPresent
+
+## Single-binary mode configuration for local development
+singleBinary:
+  replicas: 1
+
+## Persistence configuration
+persistence:
+  enabled: true
+  size: 10Gi
+
+## Service configuration
+service:
+  type: ClusterIP
+
+## Resource requirements
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+## Loki configuration
+loki:
+  commonConfig:
+    replication_factor: 1
+  auth_enabled: false
+  schemaConfig:
+    configs:
+      - from: 2020-05-15
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
+  storageConfig:
+    boltdb_shipper:
+      active_index_directory: /data/loki/index
+      cache_location: /data/loki/cache
+      cache_ttl: 24h
+      shared_store: filesystem
+    filesystem:
+      directory: /data/loki/chunks
+  limits_config:
+    enforce_metric_name: false
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
+  compactor:
+    working_directory: /data/loki/compactor
+    shared_store: filesystem
+    compaction_interval: 5m
+    retention_enabled: true
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+
+## ServiceMonitor configuration for Prometheus
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
+
+## Configure Promtail for log collection
+promtail:
+  enabled: true
+  config:
+    logLevel: info
+    serverPort: 3101
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

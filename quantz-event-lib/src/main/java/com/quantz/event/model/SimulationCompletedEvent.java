@@ -5,7 +5,7 @@ import java.util.UUID;
 public record SimulationCompletedEvent(
         UUID backtestId,
         String status,
-        SimulationResults results,
+        //SimulationResults results,
         String errorMessage
 ) {
 }
