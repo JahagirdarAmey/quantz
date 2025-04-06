@@ -1,0 +1,14 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      auto-offset-reset: earliest
+
+quantz:
+  topics:
+    backtest-created: quantz.backtest.created
+    backtest-completed: quantz.backtest.completed
+    simulation-completed: quantz.simulation.completed

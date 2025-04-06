@@ -33,6 +33,7 @@
         <module>quantz-api</module>
         <module>quantz-api-client</module>
         <module>quantz-api-service</module>
+        <module>quantz-event-lib</module>
         <module>quantz-web</module>
         <module>quantz-notification</module>
         <module>quantz-observability</module>
