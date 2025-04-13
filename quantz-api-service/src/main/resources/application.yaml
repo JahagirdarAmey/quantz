@@ -1,4 +1,13 @@
 spring:
+  datasource:
+    url: jdbc:h2:mem:quantzdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     producer:
@@ -6,9 +15,17 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
       auto-offset-reset: earliest
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 
-quantz:
-  topics:
-    backtest-created: quantz.backtest.created
-    backtest-completed: quantz.backtest.completed
-    simulation-completed: quantz.simulation.completed
+backtest:
+  event:
+    topic:
+      created: backtest.created
+      deleted: backtest.deleted
