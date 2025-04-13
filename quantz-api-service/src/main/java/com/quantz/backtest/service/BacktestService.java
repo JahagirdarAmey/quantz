@@ -9,6 +9,8 @@ import com.quantz.backtest.entity.BacktestEntity;
 import com.quantz.backtest.repository.BacktestRepository;
 import com.quantz.backtest.validator.BacktestRequestValidator;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,8 +31,9 @@ import java.util.stream.Collectors;
  */
 @Service
 @Validated
+@AllArgsConstructor
+@Slf4j
 public class BacktestService {
-    private static final Logger log = LoggerFactory.getLogger(BacktestService.class);
 
     private final BacktestRepository backtestRepository;
     private final BacktestMapper backtestMapper;
@@ -42,31 +46,6 @@ public class BacktestService {
     private final BacktestEventProducer eventProducer;
     private final BacktestCompletionTimeCalculator completionTimeCalculator;
     private final StrategyService strategyService;
-
-    public BacktestService(
-            BacktestRepository backtestRepository,
-            BacktestMapper backtestMapper,
-            BacktestDetailMapper detailMapper,
-            BacktestSummaryMapper summaryMapper,
-            BacktestResponseMapper responseMapper,
-            ListBacktestsResponseMapper listResponseMapper,
-            BacktestRequestValidator validator,
-            UserContextService userContextService,
-            BacktestEventProducer eventProducer,
-            BacktestCompletionTimeCalculator completionTimeCalculator,
-            StrategyService strategyService) {
-        this.backtestRepository = backtestRepository;
-        this.backtestMapper = backtestMapper;
-        this.detailMapper = detailMapper;
-        this.summaryMapper = summaryMapper;
-        this.responseMapper = responseMapper;
-        this.listResponseMapper = listResponseMapper;
-        this.validator = validator;
-        this.userContextService = userContextService;
-        this.eventProducer = eventProducer;
-        this.completionTimeCalculator = completionTimeCalculator;
-        this.strategyService = strategyService;
-    }
 
     /**
      * Create a new backtest
@@ -102,7 +81,7 @@ public class BacktestService {
      * @param backtestId the ID of the backtest to retrieve
      * @return the backtest details
      * @throws ResourceNotFoundException if the backtest doesn't exist
-     * @throws UnauthorizedException if the current user doesn't own the backtest
+     * @throws UnauthorizedException     if the current user doesn't own the backtest
      */
     @Transactional(readOnly = true)
     public BacktestDetail getBacktest(UUID backtestId) {
@@ -140,7 +119,7 @@ public class BacktestService {
      * List backtests with optional filtering and pagination
      *
      * @param status optional status filter
-     * @param limit maximum number of results to return
+     * @param limit  maximum number of results to return
      * @param offset pagination offset
      * @return paginated list of backtests with metadata
      */
@@ -190,8 +169,8 @@ public class BacktestService {
      *
      * @param backtestId the ID of the backtest to delete
      * @throws ResourceNotFoundException if the backtest doesn't exist
-     * @throws UnauthorizedException if the current user doesn't own the backtest
-     * @throws BadRequestException if the backtest is in a state that can't be deleted
+     * @throws UnauthorizedException     if the current user doesn't own the backtest
+     * @throws BadRequestException       if the backtest is in a state that can't be deleted
      */
     @Transactional
     public void deleteBacktest(UUID backtestId) {
@@ -201,7 +180,7 @@ public class BacktestService {
 
         BacktestEntity backtest = backtestRepository.findById(backtestId.toString())
                 .orElseThrow(() -> {
-            log.warn("Backtest with ID {} not found", backtestId);
+                    log.warn("Backtest with ID {} not found", backtestId);
                     return new ResourceNotFoundException("Backtest not found with ID: " + backtestId);
                 });
 

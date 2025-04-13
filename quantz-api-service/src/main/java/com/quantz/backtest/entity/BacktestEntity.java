@@ -27,13 +27,13 @@ public class BacktestEntity {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    private String Instruments;
-    private Float InitialCapital;
-    private Double Commission;
-    private Double Slippage;
-    private String DataInterval;
+    private String instruments;
+    private Float initialCapital;
+    private Float commission;
+    private Float slippage;
+    private String dataInterval;
 
     private String strategyConfig;
-
-
+    private String results;
+    private String errorMessage;
 }

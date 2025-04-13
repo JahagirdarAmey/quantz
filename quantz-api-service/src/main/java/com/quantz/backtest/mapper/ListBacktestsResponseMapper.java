@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * MapStruct mapper for creating response objects for list operations
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", imports = {Optional.class})
 public interface ListBacktestsResponseMapper {
     
     /**

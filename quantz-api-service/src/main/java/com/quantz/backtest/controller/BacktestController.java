@@ -7,6 +7,7 @@ import com.quantz.backtest.model.BacktestRequest;
 import com.quantz.backtest.model.ListBacktests200Response;
 import com.quantz.backtest.service.BacktestService;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,10 @@ import java.util.UUID;
 @RequestMapping("/api/backtests")
 @Validated
 @Slf4j
+@AllArgsConstructor
 public class BacktestController implements BacktestApi {
 
     private final BacktestService backtestService;
-
-    @Autowired
-    public BacktestController(BacktestService backtestService) {
-        this.backtestService = backtestService;
-    }
 
     /**
      * Create a new backtest
