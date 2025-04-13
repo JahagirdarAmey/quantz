@@ -1,44 +1,48 @@
 package com.quantz.backtest.service;
 
+import com.quantz.backtest.exception.BadRequestException;
+import com.quantz.backtest.mapper.BacktestMapper;
+import com.quantz.backtest.model.BacktestCreationResponse;
+import com.quantz.backtest.model.BacktestRequest;
 import com.quantz.backtest.entity.BacktestEntity;
-import com.quantz.backtest.model.*;
 import com.quantz.backtest.repository.BacktestRepository;
 import com.quantz.event.model.BacktestCreatedEvent;
 import com.quantz.event.publisher.EventPublisher;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
-@Slf4j
+@Validated
 public class BacktestService {
+    private static final Logger log = LoggerFactory.getLogger(BacktestService.class);
 
     private final BacktestRepository backtestRepository;
     private final EventPublisher eventPublisher;
+    private final BacktestMapper backtestMapper;
+    private final UserContextService userContextService;
 
-    @Value("${quantz.topics.backtest-created:quantz.backtest.created}")
+    @Value("${backtest.event.topic}")
     private String backtestCreatedTopic;
 
-    @Value("${quantz.topics.backtest-completed:quantz.backtest.completed}")
-    private String backtestCompletedTopic;
-
-    @Autowired
     public BacktestService(
             BacktestRepository backtestRepository,
-            EventPublisher eventPublisher
-    ) {
+            EventPublisher eventPublisher,
+            BacktestMapper backtestMapper,
+            UserContextService userContextService) {
         this.backtestRepository = backtestRepository;
         this.eventPublisher = eventPublisher;
+        this.backtestMapper = backtestMapper;
+        this.userContextService = userContextService;
     }
 
     @Transactional
@@ -50,13 +54,16 @@ public class BacktestService {
         // Generate a new UUID for the backtest
         UUID backtestId = UUID.randomUUID();
 
-        // Create and save the backtest entity
-        BacktestEntity entity = createBacktestEntity(backtestId, backtestRequest);
+        // Get current user ID
+        UUID userId = userContextService.getCurrentUserId();
+
+        // Create and save the backtest entity using the mapper
+        BacktestEntity entity = backtestMapper.toEntity(backtestRequest, backtestId, userId);
         backtestRepository.save(entity);
         log.debug("Saved backtest entity with ID: {}", backtestId);
 
-        // Create and publish the backtest created event
-        BacktestCreatedEvent event = mapToBacktestCreatedEvent(backtestId, backtestRequest);
+        // Create and publish the backtest created event using the mapper
+        BacktestCreatedEvent event = backtestMapper.toEvent(backtestRequest, backtestId, userId);
         eventPublisher.publish(backtestCreatedTopic, event);
         log.info("Published backtest created event for backtest ID: {}", backtestId);
 
@@ -65,25 +72,10 @@ public class BacktestService {
                 OffsetDateTime.now().plusMinutes(calculateEstimatedMinutes(backtestRequest));
 
         return new BacktestCreationResponse()
-                .backtestId(UUID.fromString(backtestId.toString()))
+                .backtestId(backtestId)
                 .status(BacktestCreationResponse.StatusEnum.PENDING)
                 .estimatedCompletionTime(estimatedCompletionTime);
     }
-
-    public void deleteBacktest(UUID backtestId) {
-    }
-
-    public BacktestDetail getBacktest(UUID backtestId) {
-        return null;
-    }
-
-    public ListBacktests200Response listBacktests(String status, Integer limit, Integer offset) {
-        return null;
-    }
-
-    //------------------------------------------
-    // Helper methods
-    //------------------------------------------
 
     private void validateBacktestRequest(BacktestRequest request) throws BadRequestException {
         // Validate date range
@@ -108,88 +100,42 @@ public class BacktestService {
         log.debug("Validated backtest request");
     }
 
-    private BacktestEntity createBacktestEntity(UUID backtestId, BacktestRequest request) {
-        BacktestEntity entity = new BacktestEntity();
-        entity.setId(backtestId.toString());
-        entity.setUserId(getCurrentUserId().toString());
-        entity.setName(request.getName().isPresent() ? request.getName().get() : "Backtest " + backtestId.toString().substring(0, 8));
-        entity.setStrategyId(String.valueOf(request.getStrategyId()));
-        entity.setStatus("PENDING");
-        entity.setCreatedAt(OffsetDateTime.now().toLocalDateTime());
-        entity.setStartDate(request.getStartDate());
-        entity.setEndDate(request.getEndDate());
-        entity.setInstruments(String.join(",", request.getInstruments()));
-        entity.setInitialCapital(request.getInitialCapital());
-        entity.setCommission(request.getCommission().isPresent() ? request.getCommission().get() : 0.001);
-        entity.setSlippage(request.getSlippage().isPresent() ? request.getSlippage().get() : 0.0005);
-        entity.setDataInterval(request.getDataInterval().isPresent() ? String.valueOf(request.getDataInterval().get()) : "1d");
+    private int calculateEstimatedMinutes(BacktestRequest request) {
+        // Calculate the estimated completion time based on complexity factors:
+        // - Date range length
+        // - Number of instruments
+        // - Data interval (more granular = longer)
+        long daysBetween = request.getStartDate().until(request.getEndDate()).getDays();
+        int instrumentCount = request.getInstruments().size();
 
-        if (request.getStrategyConfig() != null) {
-            // Convert strategy config to JSON string or similar format
-            entity.setStrategyConfig(convertToJsonString(request.getStrategyConfig()));
-        }
+        // Base calculation - adjust constants as needed based on actual performance
+        double baseMinutes = 1.0;
+        double dateRangeFactor = daysBetween / 30.0; // normalize to months
+        double instrumentFactor = instrumentCount / 5.0; // normalize to typical number
 
-        return entity;
-    }
-
-    private String convertToJsonString(Map<String, Object> strategyConfig) {
-        return null;
-    }
-
-    private BacktestCreatedEvent mapToBacktestCreatedEvent(UUID backtestId, BacktestRequest request) {
-        return new BacktestCreatedEvent(
-                backtestId,
-                getCurrentUserId(),
-                request.getStrategyId(),
-                request.getInstruments(),
-                request.getStartDate(),
-                request.getEndDate(),
-                request.getDataInterval().isPresent() ? String.valueOf(request.getDataInterval().get()) : "1d",
-                request.getInitialCapital(),
-                request.getStrategyConfig() != null ? request.getStrategyConfig() : Map.of()
-        );
-    }
-
-
-    private long calculateEstimatedMinutes(BacktestRequest request) {
-        // Simple heuristic for estimate:
-        // 1. Calculate days in the range
-        long days = ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
-
-        // 2. Adjust based on data interval (daily is baseline)
+        // Interval factor - more granular intervals take longer
         double intervalFactor = 1.0;
         if (request.getDataInterval().isPresent()) {
-            if (request.getDataInterval().equals("1m")) {
-                intervalFactor = 15.0;
-            } else if (request.getDataInterval().equals("5m")) {
-                intervalFactor = 10.0;
-            } else if (request.getDataInterval().equals("15m")) {
+            switch (request.getDataInterval().get()) {
+                case _1M:
                 intervalFactor = 5.0;
-            } else if (request.getDataInterval().equals("30m")) {
+                    break;
+                case _5M:
+                    intervalFactor = 4.0;
+                    break;
+                case _15M:
                 intervalFactor = 3.0;
-            } else if (request.getDataInterval().equals("1h")) {
+                    break;
+                case _30M:
+                case _1H:
                 intervalFactor = 2.0;
-            } else if (request.getDataInterval().equals("4h")) {
-                intervalFactor = 1.5;
-            } else if (request.getDataInterval().equals("1w")) {
-                intervalFactor = 0.5;
-            } else if (request.getDataInterval().equals("1mo")) {
-                intervalFactor = 0.2;
-            } else {
-                intervalFactor = 1.0; // 1d
+                    break;
+                default:
+                    intervalFactor = 1.0;
             }
         }
 
-        // 3. Adjust based on number of instruments
-        int numInstruments = request.getInstruments().size();
-
-        // Base formula: 1 minute per 30 days per instrument, adjusted by interval
-        return (long) Math.max(1, (days * numInstruments * intervalFactor) / 30);
-    }
-
-    private UUID getCurrentUserId() {
-        // In a real application, this would come from the security context
-        // For now, we'll use a placeholder
-        return UUID.fromString("00000000-0000-0000-0000-000000000001");
+        // Combine factors with appropriate weighting
+        return (int) Math.ceil(baseMinutes * (1 + dateRangeFactor + instrumentFactor) * intervalFactor);
     }
 }
