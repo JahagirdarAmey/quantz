@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface BacktestRepository extends JpaRepository<BacktestEntity, String> {
+public interface BacktestRepository extends JpaRepository<BacktestEntity, String>, BacktestRepositoryCustom {
     List<BacktestEntity> findByStatus(String status);
     // Other query methods as needed
 }
