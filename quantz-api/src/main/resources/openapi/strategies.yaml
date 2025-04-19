@@ -1,0 +1,84 @@
+openapi: 3.0.3
+# Strategies domain - contains all strategy-related paths and components
+
+paths:
+  /strategies:
+    get:
+      summary: List available strategies
+      description: Returns a list of trading strategies available for backtesting
+      operationId: listStrategies
+      tags:
+        - strategies
+      responses:
+        '200':
+          description: List of available strategies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strategies:
+                    type: array
+                    items:
+                      $ref: './common.yaml#/components/schemas/Strategy'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a new strategy
+      description: Creates a new custom trading strategy
+      operationId: createStrategy
+      tags:
+        - strategies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './common.yaml#/components/schemas/StrategyCreationRequest'
+      responses:
+        '201':
+          description: Strategy successfully created
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Strategy'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+
+  /strategies/{strategyId}:
+    get:
+      summary: Get strategy details
+      description: Returns detailed information about a specific strategy
+      operationId: getStrategy
+      tags:
+        - strategies
+      parameters:
+        - name: strategyId
+          in: path
+          required: true
+          description: ID of the strategy
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed strategy information
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Strategy'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Strategy not found
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'

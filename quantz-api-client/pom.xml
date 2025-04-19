@@ -60,16 +60,17 @@
                 <version>${openapi-generator.version}</version>
                 <executions>
                     <execution>
+                    <id>generate-backtest-api</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/../quantz-api/src/main/resources/openapi/backtest-api.yaml
+                            <inputSpec>${project.basedir}/../quantz-api/src/main/resources/openapi/main.yaml
                             </inputSpec>
                             <generatorName>spring</generatorName>
-                            <packageName>com.quantz.backtest.api</packageName>
-                            <apiPackage>com.quantz.backtest.api</apiPackage>
-                            <modelPackage>com.quantz.backtest.model</modelPackage>
+                            <packageName>com.quantz.api</packageName>
+                            <apiPackage>com.quantz.api</apiPackage>
+                            <modelPackage>com.quantz.model</modelPackage>
                             <configOptions>
                                 <useJakartaEe>true</useJakartaEe>
                                 <interfaceOnly>true</interfaceOnly>
@@ -77,6 +78,8 @@
                                 <useOptional>true</useOptional>
                                 <useTags>true</useTags>
                                 <dateLibrary>java8</dateLibrary>
+                            <skipDefaultInterface>true</skipDefaultInterface>
+                            <openApiNullable>false</openApiNullable>
                             </configOptions>
                         </configuration>
                     </execution>

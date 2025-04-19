@@ -1,0 +1,184 @@
+openapi: 3.0.3
+# Backtest domain - contains all backtest-related paths and components
+
+paths:
+  /backtest:
+    post:
+      summary: Create and run a new backtest
+      description: Initiates a new backtest using the specified strategy, parameters, and market data
+      operationId: createBacktest
+      tags:
+        - backtest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './common.yaml#/components/schemas/BacktestRequest'
+      responses:
+        '202':
+          description: Backtest successfully queued
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/BacktestCreationResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too many requests
+
+    get:
+      summary: List all backtests
+      description: Returns a list of all backtests for the authenticated user
+      operationId: listBacktests
+      tags:
+        - backtest
+      parameters:
+        - name: status
+          in: query
+          description: Filter backtests by status
+          schema:
+            type: string
+            enum: [ pending, running, completed, failed ]
+        - name: limit
+          in: query
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of results to skip
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of backtests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backtests:
+                    type: array
+                    items:
+                      $ref: './common.yaml#/components/schemas/BacktestSummary'
+                  total:
+                    type: integer
+                    description: Total number of backtests
+                  limit:
+                    type: integer
+                    description: Limit used for pagination
+                  offset:
+                    type: integer
+                    description: Offset used for pagination
+        '401':
+          description: Unauthorized
+
+  /backtest/{backtestId}:
+    get:
+      summary: Get backtest details
+      description: Returns detailed information about a specific backtest
+      operationId: getBacktest
+      tags:
+        - backtest
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed backtest information
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/BacktestDetail'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+
+    delete:
+      summary: Cancel or delete a backtest
+      description: Cancels a running backtest or deletes a completed backtest
+      operationId: deleteBacktest
+      tags:
+        - backtest
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Backtest successfully cancelled or deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+        '409':
+          description: Cannot delete the backtest in its current state
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'
+
+  /backtest/{backtestId}/results:
+    get:
+      summary: Get backtest results
+      description: Retrieves the performance metrics and trade history for a completed backtest
+      operationId: getBacktestResults
+      tags:
+        - results
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: ID of the backtest
+          schema:
+            type: string
+            format: uuid
+        - name: includeTradeHistory
+          in: query
+          description: Whether to include detailed trade history
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Backtest results
+          content:
+            application/json:
+              schema:
+                $ref: './results.yaml#/components/schemas/BacktestResults'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Backtest not found or results not yet available
+          content:
+            application/json:
+              schema:
+                $ref: './common.yaml#/components/schemas/Error'

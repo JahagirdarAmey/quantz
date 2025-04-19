@@ -1,0 +1,76 @@
+openapi: 3.0.3
+# Results domain - contains all backtest results-related components
+
+components:
+  schemas:
+    BacktestResults:
+      type: object
+      required:
+        - backtestId
+        - metrics
+        - equityCurve
+      properties:
+        backtestId:
+          type: string
+          format: uuid
+          description: ID of the backtest
+        metrics:
+          $ref: './common.yaml#/components/schemas/PerformanceMetrics'
+        equityCurve:
+          type: array
+          description: Equity curve data points
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              equity:
+                type: number
+                format: float
+        drawdowns:
+          type: array
+          description: Major drawdown periods
+          items:
+            type: object
+            properties:
+              startDate:
+                type: string
+                format: date-time
+              endDate:
+                type: string
+                format: date-time
+              durationDays:
+                type: number
+                format: float
+              depthPercent:
+                type: number
+                format: float
+              recoveryDays:
+                type: number
+                format: float
+        monthlyReturns:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: Returns by month (key format YYYY-MM)
+        tradeHistory:
+          type: array
+          description: History of all trades (only included if requested)
+          items:
+            $ref: './common.yaml#/components/schemas/Trade'
+        positionTimeline:
+          type: array
+          description: Timeline of position changes
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              positions:
+                type: object
+                additionalProperties:
+                  type: number
+                  format: float
