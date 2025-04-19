@@ -52,7 +52,7 @@ public class BacktestService {
      * @throws BadRequestException if the request is invalid
      */
     @Transactional
-    public BacktestCreationResponse createBacktest(@Valid BacktestRequest backtestRequest) throws BadRequestException {
+    public BacktestCreationResponse createBacktest(BacktestRequest backtestRequest) throws BadRequestException {
         log.info("Creating backtest for strategy: {}", backtestRequest.getStrategyId());
 
         validator.validate(backtestRequest);

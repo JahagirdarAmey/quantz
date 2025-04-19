@@ -42,7 +42,7 @@ public class BacktestController implements BacktestApi {
      */
     @PostMapping
     @Override
-    public ResponseEntity<BacktestCreationResponse> createBacktest(@Valid @RequestBody BacktestRequest request) {
+    public ResponseEntity<BacktestCreationResponse> createBacktest(@RequestBody BacktestRequest request) {
         log.debug("REST request to create backtest for strategy: {}", request.getStrategyId());
         BacktestCreationResponse response = backtestService.createBacktest(request);
         return ResponseEntity.ok(response);

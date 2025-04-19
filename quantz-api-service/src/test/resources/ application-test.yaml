@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    # TestContainers will dynamically replace these properties
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  flyway:
+    enabled: false  # Disable Flyway for tests
+  kafka:
+    # TestContainers will dynamically set the bootstrap-servers property
+    # These are the default serializer/deserializer settings
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: backtest-consumer-test
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.quantz.*
+
+# Override security for testing
+security:
+  auth:
+    enabled: false
+
+# Set test API path
+server:
+  servlet:
+    context-path: /v1
+
+# Logging configuration for tests
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.test: INFO
+    com.quantz: DEBUG
+    org.apache.kafka: WARN  # Reduce noise from Kafka in test logs

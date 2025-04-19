@@ -3,12 +3,14 @@ package com.quantz.event.publisher;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
+@Profile("!test")
 public class KafkaEventPublisher implements EventPublisher {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
