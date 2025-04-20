@@ -1,7 +1,7 @@
 package com.quantz.backtest.mapper;
 
-import com.quantz.backtest.model.BacktestSummary;
-import com.quantz.backtest.model.ListBacktests200Response;
+import com.quantz.model.BacktestSummary;
+import com.quantz.model.ListBacktests200Response;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

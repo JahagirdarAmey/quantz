@@ -4,7 +4,7 @@ import com.quantz.backtest.exception.BadRequestException;
 import com.quantz.backtest.exception.ResourceNotFoundException;
 import com.quantz.backtest.exception.UnauthorizedException;
 import com.quantz.backtest.mapper.*;
-import com.quantz.backtest.model.*;
+import com.quantz.model.*;
 import com.quantz.backtest.entity.BacktestEntity;
 import com.quantz.backtest.repository.BacktestRepository;
 import com.quantz.backtest.validator.BacktestRequestValidator;
@@ -103,7 +103,7 @@ public class BacktestService {
 
         try {
             String strategyName = strategyService.getStrategyName(UUID.fromString(backtest.getStrategyId()));
-            detail.setStrategyName(Optional.ofNullable(strategyName));
+            detail.setStrategyName(strategyName);
         } catch (Exception e) {
             log.warn("Could not retrieve strategy name for strategy ID: {}", backtest.getStrategyId(), e);
         }
@@ -154,7 +154,7 @@ public class BacktestService {
         summaries.forEach(summary -> {
             try {
                 String strategyName = strategyService.getStrategyName(summary.getStrategyId());
-                summary.setStrategyName(Optional.ofNullable(strategyName));
+                summary.setStrategyName(strategyName);
             } catch (Exception e) {
                 log.warn("Could not retrieve strategy name for strategy ID: {}", summary.getStrategyId(), e);
             }

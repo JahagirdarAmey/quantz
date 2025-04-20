@@ -1,7 +1,7 @@
 package com.quantz.backtest.mapper;
 
 import com.quantz.backtest.entity.BacktestEntity;
-import com.quantz.backtest.model.BacktestSummary;
+import com.quantz.model.BacktestSummary;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;

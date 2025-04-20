@@ -1,6 +1,6 @@
 package com.quantz.backtest.mapper;
 
-import com.quantz.backtest.model.BacktestRequest;
+import com.quantz.model.BacktestRequest;
 import com.quantz.backtest.entity.BacktestEntity;
 import com.quantz.event.model.BacktestCreatedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;

@@ -1,7 +1,7 @@
 package com.quantz.backtest.validator;
 
 import com.quantz.backtest.exception.BadRequestException;
-import com.quantz.backtest.model.BacktestRequest;
+import com.quantz.model.BacktestRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
 package com.quantz.backtest.service;
 
-import com.quantz.backtest.model.BacktestRequest;
+import com.quantz.model.BacktestRequest;
 import com.quantz.backtest.mapper.BacktestMapper;
 import com.quantz.event.model.BacktestCreatedEvent;
 import com.quantz.event.model.BacktestDeletedEvent;

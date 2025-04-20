@@ -1,9 +1,11 @@
 package com.quantz.backtest.service;
 
-import com.quantz.backtest.model.BacktestRequest;
+import com.quantz.model.BacktestRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
+
+import static com.quantz.model.BacktestDetail.DataIntervalEnum.*;
 
 /**
  * Calculator for estimating backtest completion times
@@ -43,8 +45,8 @@ public class BacktestCompletionTimeCalculator {
         
         // Interval factor - more granular intervals take longer
         double intervalFactor = 1.0;
-        if (request.getDataInterval().isPresent()) {
-            intervalFactor = switch (request.getDataInterval().get()) {
+        if (request.getDataInterval() != null) {
+            intervalFactor = switch (request.getDataInterval()) {
                 case _1M -> 5.0;
                 case _5M -> 4.0;
                 case _15M -> 3.0;

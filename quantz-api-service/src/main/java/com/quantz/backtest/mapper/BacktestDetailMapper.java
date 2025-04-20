@@ -1,8 +1,8 @@
 package com.quantz.backtest.mapper;
 
 import com.quantz.backtest.entity.BacktestEntity;
-import com.quantz.backtest.model.BacktestDetail;
-import com.quantz.backtest.model.PerformanceMetricsSummary;
+import com.quantz.model.BacktestDetail;
+import com.quantz.model.PerformanceMetricsSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.*;
