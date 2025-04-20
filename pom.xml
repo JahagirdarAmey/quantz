@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.3</version>
+        <version>${spring-boot-dependencies.version}</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -21,6 +21,8 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <openapi-generator.version>7.12.0</openapi-generator.version>
+        <spring-boot-dependencies.version>3.4.3</spring-boot-dependencies.version>
+        <spring-cloud.version>2023.0.0</spring-cloud.version>
     </properties>
 
     <modules>
@@ -44,7 +46,15 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.4.3</version>
+                <version>${spring-boot-dependencies.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- Use the generated API client -->
@@ -86,6 +96,12 @@
                 <version>1.20.6</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>3.11.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -126,7 +142,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.4.3</version>
+                <version>${spring-boot-dependencies.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>
