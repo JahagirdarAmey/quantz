@@ -1,0 +1,79 @@
+graph TD
+%% Main Components
+    Client[Client/User]
+    Controller[MarketDataController]
+    DataScraper[DataScraperService]
+    UpstoxAuth[UpstoxAuthService]
+    UpstoxHttp[UpstoxHttpClient]
+    UpstoxInstrument[UpstoxInstrumentService]
+    UpstoxMarket[UpstoxMarketDataService]
+
+%% Repositories
+    InstrumentRepo[InstrumentRepository]
+    CandleDataRepo[CandleDataRepository]
+    ScrapingMetadataRepo[ScrapingMetadataRepository]
+    OAuthTokenRepo[OAuthTokenRepository]
+
+%% External Resources
+    UpstoxAPI[Upstox API]
+    Database[(PostgreSQL Database)]
+
+%% Configuration
+    AppConfig[AppConfig]
+    UpstoxProps[UpstoxProperties]
+
+%% Scheduler
+    Scheduler[Spring Scheduler]
+
+%% Connections
+    Client --> Controller
+    Controller --> DataScraper
+    Controller --> InstrumentRepo
+    Controller --> CandleDataRepo
+    Controller --> ScrapingMetadataRepo
+
+    DataScraper --> UpstoxAuth
+    DataScraper --> UpstoxInstrument
+    DataScraper --> UpstoxMarket
+    DataScraper --> InstrumentRepo
+    DataScraper --> CandleDataRepo
+    DataScraper --> ScrapingMetadataRepo
+
+    UpstoxAuth --> UpstoxHttp
+    UpstoxAuth --> OAuthTokenRepo
+
+    UpstoxInstrument --> UpstoxHttp
+    UpstoxInstrument --> InstrumentRepo
+
+    UpstoxMarket --> UpstoxHttp
+    UpstoxMarket --> CandleDataRepo
+
+    UpstoxHttp --> UpstoxAPI
+
+    InstrumentRepo --> Database
+    CandleDataRepo --> Database
+    ScrapingMetadataRepo --> Database
+    OAuthTokenRepo --> Database
+
+    UpstoxProps --> UpstoxAuth
+    UpstoxProps --> UpstoxHttp
+    UpstoxProps --> UpstoxInstrument
+    UpstoxProps --> UpstoxMarket
+
+    AppConfig --> Controller
+    AppConfig --> DataScraper
+
+    Scheduler --> DataScraper
+
+%% Style
+    classDef service fill:#afd,stroke:#693,stroke-width:2px
+    classDef repo fill:#fda,stroke:#d82,stroke-width:2px
+    classDef external fill:#acf,stroke:#36c,stroke-width:2px
+    classDef config fill:#ddf,stroke:#99b,stroke-width:2px
+    classDef client fill:#faa,stroke:#a55,stroke-width:2px
+
+    class DataScraper,UpstoxAuth,UpstoxHttp,UpstoxInstrument,UpstoxMarket service
+    class InstrumentRepo,CandleDataRepo,ScrapingMetadataRepo,OAuthTokenRepo repo
+    class UpstoxAPI,Database external
+    class AppConfig,UpstoxProps,Scheduler config
+    class Client,Controller client

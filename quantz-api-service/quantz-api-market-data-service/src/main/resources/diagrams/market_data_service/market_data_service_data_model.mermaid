@@ -1,0 +1,121 @@
+classDiagram
+    class Instrument {
+        <<Entity>>
+        +String instrumentKey
+        +String exchange
+        +String segment
+        +String name
+        +String isin
+        +String instrumentType
+        +String tradingSymbol
+        +String exchangeToken
+        +Integer lotSize
+        +Double tickSize
+        +String expiry
+        +Double strike
+        +String optionType
+        +LocalDateTime createdAt
+        +LocalDateTime updatedAt
+    }
+
+    class CandleData {
+        <<Entity>>
+        +Long id
+        +String instrumentKey
+        +String interval
+        +LocalDateTime timestamp
+        +Double open
+        +Double high
+        +Double low
+        +Double close
+        +Long volume
+        +LocalDateTime createdAt
+    }
+
+    class ScrapingMetadata {
+        <<Entity>>
+        +Long id
+        +LocalDate scrapeDate
+        +LocalDateTime scrapedAt
+        +Integer instrumentsScraped
+        +Integer dataPointsScraped
+        +Boolean fullScrape
+        +String status
+        +String details
+        +LocalDateTime createdAt
+    }
+
+    class OAuthToken {
+        <<Entity>>
+        +Long id
+        +String accessToken
+        +String refreshToken
+        +String tokenType
+        +LocalDateTime expiresAt
+        +LocalDateTime createdAt
+        +LocalDateTime updatedAt
+        +boolean isExpired()
+    }
+
+    class UpstoxInstrument {
+        <<Model>>
+        +String segment
+        +String name
+        +String exchange
+        +String isin
+        +String instrumentType
+        +String instrumentKey
+        +Integer lotSize
+        +Double freezeQuantity
+        +String exchangeToken
+        +Double tickSize
+        +String tradingSymbol
+        +String shortName
+        +String securityType
+        +String expiry
+        +Double strike
+        +String optionType
+    }
+
+    class CandleDataModel {
+        <<Model>>
+        +String instrumentKey
+        +String interval
+        +LocalDateTime timestamp
+        +Double open
+        +Double high
+        +Double low
+        +Double close
+        +Long volume
+    }
+
+    class LtpQuoteData {
+        <<Model>>
+        +BigDecimal lastPrice
+        +String instrumentToken
+        +LocalDateTime lastTradeTime
+        +BigDecimal closePrice
+        +BigDecimal priceChange
+        +BigDecimal priceChangePercent
+        +Long lastQuantity
+        +Long volume
+        +BigDecimal averagePrice
+        +Long openInterest
+        +Long totalBuyQuantity
+        +Long totalSellQuantity
+        +boolean isPriceIncreased()
+        +BigDecimal getAbsolutePriceChange()
+    }
+
+    class TokenResponse {
+        <<Model>>
+        +String accessToken
+        +String refreshToken
+        +Long expiresIn
+        +String tokenType
+        +LocalDateTime expiryTime
+    }
+
+    Instrument "1" -- "many" CandleData : has
+    UpstoxInstrument --|> Instrument : maps to
+    CandleDataModel --|> CandleData : maps to

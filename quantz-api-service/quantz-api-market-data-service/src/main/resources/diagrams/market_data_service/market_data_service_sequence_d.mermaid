@@ -1,0 +1,103 @@
+sequenceDiagram
+    autonumber
+    participant S as Scheduler
+    participant C as Client
+    participant MC as MarketDataController
+    participant DS as DataScraperService
+    participant UA as UpstoxAuthService
+    participant UI as UpstoxInstrumentService
+    participant UM as UpstoxMarketDataService
+    participant HTTP as UpstoxHttpClient
+    participant API as Upstox API
+    participant DB as Database
+
+%% Scheduled scraping flow
+    S ->> DS: scheduledScraping()
+    activate DS
+
+%% Authentication check
+    DS ->> UA: isTokenValid()
+    activate UA
+    UA ->> DB: retrieve latest token
+    UA ->> UA: check if expired
+    alt Token expired
+        UA ->> HTTP: request token refresh
+        HTTP ->> API: refresh token
+        API -->> HTTP: new token
+        HTTP -->> UA: token response
+        UA ->> DB: save new token
+    end
+    UA -->> DS: token validity status
+    deactivate UA
+
+    alt Valid token
+    %% Instrument scraping
+        DS ->> UI: fetchAllInstruments()
+        activate UI
+        UI ->> HTTP: request instrument lists
+        HTTP ->> API: get instrument lists
+        API -->> HTTP: instrument data
+        HTTP -->> UI: instrument response
+        UI ->> UI: process & cache instruments
+        UI ->> DB: save instruments
+        UI -->> DS: instrument list
+        deactivate UI
+
+    %% Determine scraping range
+        DS ->> DB: get latest scraping metadata
+        DB -->> DS: metadata response
+
+        alt First run
+            DS ->> DS: set startDate = today - 10 years
+        else Subsequent run
+            DS ->> DS: set startDate = lastScrape.date + 1 day
+        end
+
+    %% Historical data scraping
+        DS ->> UM: fetchHistoricalCandleData()
+        activate UM
+        UM ->> HTTP: request historical data
+        HTTP ->> API: get historical data
+        API -->> HTTP: candle data
+        HTTP -->> UM: candle response
+        UM ->> UM: process candle data
+        UM -->> DS: processed data
+        deactivate UM
+
+    %% Save data
+        DS ->> DB: save candle data
+        DS ->> DB: save scraping metadata
+    end
+    deactivate DS
+
+%% Manual scraping flow
+    C ->> MC: POST /api/market-data/scrape
+    activate MC
+    MC ->> DS: manualScraping()
+
+%% Same flow as above, abbreviated
+    DS ->> UA: isTokenValid()
+    DS ->> UI: fetchAllInstruments()
+    DS ->> DB: get latest scraping metadata
+    DS ->> UM: fetchHistoricalCandleData()
+    DS ->> DB: save candle data
+    DS ->> DB: save scraping metadata
+
+    DS -->> MC: scraping result
+    MC -->> C: API Response
+    deactivate MC
+
+%% Data retrieval flow
+    C ->> MC: GET /api/market-data/instruments
+    activate MC
+    MC ->> DB: query instruments
+    DB -->> MC: instrument data
+    MC -->> C: API Response
+    deactivate MC
+
+    C ->> MC: GET /api/market-data/candles/{key}
+    activate MC
+    MC ->> DB: query candle data
+    DB -->> MC: candle data
+    MC -->> C: API Response
+    deactivate MC

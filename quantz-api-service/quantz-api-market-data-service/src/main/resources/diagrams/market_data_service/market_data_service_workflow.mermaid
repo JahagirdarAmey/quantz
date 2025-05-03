@@ -1,0 +1,55 @@
+flowchart TD
+%% Main workflow
+    Start([Start]) --> ScheduleOrManual{Scheduled or\nManual?}
+
+    ScheduleOrManual -->|Scheduled| ScheduledTrigger[Triggered at 4PM weekdays]
+    ScheduleOrManual -->|Manual| ManualTrigger[API endpoint triggered]
+
+    ScheduledTrigger --> AuthCheck
+    ManualTrigger --> AuthCheck
+
+%% Authentication check
+    AuthCheck{Valid Auth?} -->|No| GetNewToken[Get/Refresh Token]
+    GetNewToken --> SaveToken[Save Token to DB]
+    SaveToken --> FailCheck
+
+    AuthCheck -->|Yes| FetchInstruments
+
+    FailCheck{Success?} -->|No| RecordFailure[Record Failure]
+    FailCheck -->|Yes| FetchInstruments
+
+%% Instrument handling
+    FetchInstruments[Fetch Instrument Definitions] --> SaveInstruments[Save Instruments to DB]
+    SaveInstruments --> DetermineRange
+
+%% Date range determination
+    DetermineRange[Determine Date Range] --> FirstRunCheck{First Run?}
+    FirstRunCheck -->|Yes| LongRange[Set 10-year range]
+    FirstRunCheck -->|No| ShortRange[Set delta range]
+
+    LongRange --> FetchHistData
+    ShortRange --> FetchHistData
+
+%% Historical data
+    FetchHistData[Fetch Historical Data] --> ProcessBatches[Process Instrument Batches]
+    ProcessBatches --> SaveHistData[Save Candle Data to DB]
+    SaveHistData --> RecordSuccess[Record Scraping Metadata]
+    RecordFailure --> End([End])
+    RecordSuccess --> End
+
+%% Data access
+    End --> DataAccess[Data Access via API]
+    DataAccess --> InstrumentData[GET /instruments]
+    DataAccess --> CandleData[GET /candles/instrumentKey]
+DataAccess --> ScrapingHistory[GET /scraping-history]
+
+%% Styles
+classDef process fill:#afd,stroke:#693,stroke-width:2px
+classDef decision fill:#fda,stroke:#d82,stroke-width:2px
+classDef endpoint fill:#ddf,stroke:#99b,stroke-width:2px
+classDef trigger fill:#acf,stroke:#36c,stroke-width:2px
+
+class FetchInstruments,SaveInstruments,FetchHistData,ProcessBatches,SaveHistData,GetNewToken,SaveToken,RecordSuccess,RecordFailure process
+class AuthCheck,FirstRunCheck,FailCheck,ScheduleOrManual decision
+class Start,End,InstrumentData,CandleData,ScrapingHistory endpoint
+class ScheduledTrigger,ManualTrigger,DataAccess trigger
