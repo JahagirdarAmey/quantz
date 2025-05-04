@@ -10,22 +10,22 @@ import java.util.Map;
  * Interface for Upstox HTTP client operations
  */
 public interface UpstoxHttpClient {
-    
+
     /**
      * Send HTTP GET request to Upstox API
      */
     <T> ResponseEntity<T> get(String path, Class<T> responseType);
-    
+
     /**
      * Send HTTP GET request with query parameters to Upstox API
      */
     <T> ResponseEntity<T> get(String path, Map<String, Object> queryParams, Class<T> responseType);
-    
+
     /**
      * Send HTTP POST request to Upstox API
      */
     <T> ResponseEntity<T> post(String path, Object requestBody, Class<T> responseType);
-    
+
     /**
      * Send a custom RequestEntity to Upstox API
      */

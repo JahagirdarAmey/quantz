@@ -35,16 +35,16 @@ public class MarketDataController {
             return ResponseEntity.internalServerError().body("Error starting scraping: " + e.getMessage());
         }
     }
-    
+
     @GetMapping("/instruments")
     public ResponseEntity<List<Instrument>> getInstruments(
             @RequestParam(required = false) String exchange,
             @RequestParam(required = false) String segment,
             @RequestParam(required = false) String instrumentType,
             @RequestParam(required = false) String search) {
-        
+
         List<Instrument> instruments;
-        
+
         if (exchange != null && !exchange.isEmpty()) {
             instruments = instrumentRepository.findByExchange(exchange);
         } else if (segment != null && !segment.isEmpty()) {
@@ -56,26 +56,26 @@ public class MarketDataController {
         } else {
             instruments = instrumentRepository.findAll();
         }
-        
+
         return ResponseEntity.ok(instruments);
     }
-    
+
     @GetMapping("/instruments/{instrumentKey}")
     public ResponseEntity<Instrument> getInstrument(@PathVariable String instrumentKey) {
         return instrumentRepository.findById(instrumentKey)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/candles/{instrumentKey}")
     public ResponseEntity<List<CandleData>> getCandleData(
             @PathVariable String instrumentKey,
             @RequestParam(required = false, defaultValue = "1d") String interval,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-        
+
         List<CandleData> candleData;
-        
+
         if (startTime != null && endTime != null) {
             candleData = candleDataRepository.findByInstrumentKeyAndIntervalAndTimestampBetweenOrderByTimestampAsc(
                     instrumentKey, interval, startTime, endTime);
@@ -83,15 +83,15 @@ public class MarketDataController {
             candleData = candleDataRepository.findByInstrumentKeyAndIntervalOrderByTimestampAsc(
                     instrumentKey, interval);
         }
-        
+
         return ResponseEntity.ok(candleData);
     }
-    
+
     @GetMapping("/scraping-history")
     public ResponseEntity<List<ScrapingMetadata>> getScrapingHistory() {
         return ResponseEntity.ok(metadataRepository.findAll());
     }
-    
+
     @GetMapping("/scraping-history/latest")
     public ResponseEntity<ScrapingMetadata> getLatestScraping() {
         Optional<ScrapingMetadata> latestScraping = metadataRepository.findLatestScraping();

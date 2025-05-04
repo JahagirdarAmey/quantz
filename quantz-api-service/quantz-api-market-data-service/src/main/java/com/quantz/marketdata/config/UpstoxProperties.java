@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "upstox")
 public class UpstoxProperties {
-    
+
     private String baseUrl = "https://api.upstox.com/v2";
     private Auth auth = new Auth();
     private Api api = new Api();
     private WebSocket webSocket = new WebSocket();
     private Instruments instruments = new Instruments();
-    
+
     @Data
     public static class Auth {
         private String clientId;
@@ -24,7 +24,7 @@ public class UpstoxProperties {
         private String tokenEndpoint = "https://api.upstox.com/v2/login/authorization/token";
         private Long tokenExpiryBufferSeconds = 300L; // 5 minutes buffer before token expiry
     }
-    
+
     @Data
     public static class Api {
         private int connectTimeoutMillis = 5000;
@@ -33,7 +33,7 @@ public class UpstoxProperties {
         private long retryDelayMillis = 1000;
         private int maxRequestsPerSecond = 10; // Default API rate limit
     }
-    
+
     @Data
     public static class WebSocket {
         private String marketDataEndpoint = "wss://api.upstox.com/v2/feed/market-data-feed";
@@ -41,7 +41,7 @@ public class UpstoxProperties {
         private int pingIntervalMillis = 30000;
         private int maxReconnectAttempts = 10;
     }
-    
+
     @Data
     public static class Instruments {
         private String bodInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/NSE.json";

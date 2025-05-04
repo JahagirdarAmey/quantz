@@ -32,14 +32,14 @@ public class DataScraperServiceImpl implements DataScraperService {
     private final UpstoxAuthService authService;
     private final UpstoxInstrumentService instrumentService;
     private final UpstoxMarketDataService marketDataService;
-    
+
     private final InstrumentRepository instrumentRepository;
     private final CandleDataRepository candleDataRepository;
     private final ScrapingMetadataRepository metadataRepository;
-    
+
     private static final String DEFAULT_INTERVAL = "1d"; // Daily candles
     private static final List<String> EQUITY_SEGMENTS = List.of("NSE_EQ", "BSE_EQ");
-    
+
     // Run at 4:00 PM on weekdays (Monday to Friday)
     @Scheduled(cron = "${data-scraper.cron:0 0 16 * * MON-FRI}")
     @Override
@@ -64,18 +64,18 @@ public class DataScraperServiceImpl implements DataScraperService {
                 saveFailedMetadata("AUTH_FAILED", "No valid authentication token available");
                 return;
             }
-            
+
             // Step 1: Fetch and update instruments
             int instrumentCount = scrapeInstruments();
             log.info("Fetched and updated {} instruments", instrumentCount);
-            
+
             // Step 2: Determine date range for historical data
             ScrapingMetadata lastScrape = metadataRepository.findLatestScraping()
                     .orElse(null);
-            
+
             LocalDate startDate;
             boolean isFirstRun = false;
-            
+
             if (lastScrape == null) {
                 // First time running - scrape 10 years of historical data
                 startDate = LocalDate.now().minusYears(10);
@@ -86,23 +86,23 @@ public class DataScraperServiceImpl implements DataScraperService {
                 startDate = lastScrape.getScrapeDate().plusDays(1);
                 log.info("Incremental scraping - starting from {}", startDate);
             }
-            
+
             LocalDate endDate = LocalDate.now();
-            
+
             // Don't proceed if we're already up to date
             if (startDate.isAfter(endDate)) {
                 log.info("Data is already up to date. No scraping needed.");
                 saveSuccessMetadata(endDate, instrumentCount, 0, isFirstRun);
                 return;
             }
-            
+
             // Step 3: Scrape historical data
             int dataPoints = scrapeHistoricalData(startDate, endDate);
             log.info("Scraped a total of {} data points", dataPoints);
-            
+
             // Step 4: Save metadata
             saveSuccessMetadata(endDate, instrumentCount, dataPoints, isFirstRun);
-            
+
         } catch (Exception e) {
             log.error("Error during data scraping: {}", e.getMessage(), e);
             saveFailedMetadata("ERROR", e.getMessage());
@@ -112,40 +112,40 @@ public class DataScraperServiceImpl implements DataScraperService {
 
     private int scrapeInstruments() {
         AtomicInteger count = new AtomicInteger(0);
-        
+
         log.info("Fetching all instruments...");
         List<UpstoxInstrument> upstoxInstruments = instrumentService.fetchAllInstruments();
-        
+
         if (upstoxInstruments == null || upstoxInstruments.isEmpty()) {
             log.warn("No instruments fetched from Upstox");
             return 0;
         }
-        
+
         log.info("Total instruments fetched from Upstox: {}", upstoxInstruments.size());
-        
+
         // Convert to entities and save to database
         List<Instrument> instruments = upstoxInstruments.stream()
                 .map(this::convertToEntity)
                 .collect(Collectors.toList());
-        
+
         // Save in batches to avoid overwhelming the database
         List<List<Instrument>> batches = splitIntoBatches(instruments, 500);
-        
+
         for (List<Instrument> batch : batches) {
             List<Instrument> savedInstruments = instrumentRepository.saveAll(batch);
             count.addAndGet(savedInstruments.size());
             log.info("Saved batch of {} instruments", savedInstruments.size());
         }
-        
+
         return count.get();
     }
-    
+
     private int scrapeHistoricalData(LocalDate startDate, LocalDate endDate) {
         AtomicInteger totalDataPoints = new AtomicInteger(0);
-        
+
         // For initial run, we'll prioritize NSE equities to avoid overwhelming the API
         List<Instrument> instruments;
-        
+
         if (startDate.isBefore(LocalDate.now().minusYears(1))) {
             // If we're doing a long historical scrape, only get equities
             instruments = instrumentRepository.findBySegmentAndInstrumentType("NSE_EQ", "EQ");
@@ -155,38 +155,38 @@ public class DataScraperServiceImpl implements DataScraperService {
             instruments = instrumentRepository.findAll();
             log.info("Short-term historical scrape: fetching data for all {} instruments", instruments.size());
         }
-        
+
         // Process equity instruments first, then others
         List<Instrument> equityInstruments = instruments.stream()
                 .filter(i -> EQUITY_SEGMENTS.contains(i.getSegment()))
                 .collect(Collectors.toList());
-        
+
         log.info("Processing {} equity instruments", equityInstruments.size());
-        
+
         // Process instruments in batches for better performance and resource management
         List<List<Instrument>> batches = splitIntoBatches(equityInstruments, 50);
-        
+
         for (List<Instrument> batch : batches) {
             // Process batch in parallel
             AtomicInteger batchPoints = new AtomicInteger(0);
-            
+
             batch.parallelStream().forEach(instrument -> {
                 try {
                     int points = scrapeInstrumentData(instrument, DEFAULT_INTERVAL, startDate, endDate);
                     batchPoints.addAndGet(points);
-                    
+
                     // Small delay to avoid overwhelming the API
                     Thread.sleep(200);
                 } catch (Exception e) {
-                    log.error("Error scraping data for instrument {}: {}", 
+                    log.error("Error scraping data for instrument {}: {}",
                             instrument.getTradingSymbol(), e.getMessage());
                 }
             });
-            
+
             totalDataPoints.addAndGet(batchPoints.get());
-            log.info("Completed batch of {} instruments, added {} data points", 
+            log.info("Completed batch of {} instruments, added {} data points",
                     batch.size(), batchPoints.get());
-            
+
             // Add a delay between batches to be respectful of API limits
             try {
                 Thread.sleep(1000);
@@ -194,45 +194,45 @@ public class DataScraperServiceImpl implements DataScraperService {
                 Thread.currentThread().interrupt();
             }
         }
-        
+
         log.info("Completed scraping equity data, total data points: {}", totalDataPoints.get());
-        
+
         return totalDataPoints.get();
     }
-    
+
     private int scrapeInstrumentData(Instrument instrument, String interval, LocalDate startDate, LocalDate endDate) {
-        log.info("Fetching {} data for instrument: {} ({}) from {} to {}", 
+        log.info("Fetching {} data for instrument: {} ({}) from {} to {}",
                 interval, instrument.getTradingSymbol(), instrument.getInstrumentKey(), startDate, endDate);
-        
+
         List<CandleData> candleData = marketDataService.fetchHistoricalCandleData(
                 instrument.getInstrumentKey(), interval, startDate, endDate);
-        
+
         if (candleData == null || candleData.isEmpty()) {
-            log.info("No data available for {} between {} and {}", 
+            log.info("No data available for {} between {} and {}",
                     instrument.getTradingSymbol(), startDate, endDate);
             return 0;
         }
-        
+
         // Convert to entities and save
         List<com.quantz.marketdata.entity.CandleData> entities = candleData.stream()
                 .map(this::convertToEntity)
                 .collect(Collectors.toList());
-        
+
         // Save in batches
         List<List<com.quantz.marketdata.entity.CandleData>> batches = splitIntoBatches(entities, 200);
-        
+
         int savedCount = 0;
         for (List<com.quantz.marketdata.entity.CandleData> batch : batches) {
             List<com.quantz.marketdata.entity.CandleData> saved = candleDataRepository.saveAll(batch);
             savedCount += saved.size();
         }
-        
-        log.info("Successfully scraped and saved {} data points for {} ({})", 
+
+        log.info("Successfully scraped and saved {} data points for {} ({})",
                 savedCount, instrument.getTradingSymbol(), instrument.getInstrumentKey());
-        
+
         return savedCount;
     }
-    
+
     private Instrument convertToEntity(UpstoxInstrument upstoxInstrument) {
         return Instrument.builder()
                 .instrumentKey(upstoxInstrument.getInstrumentKey())
@@ -250,7 +250,7 @@ public class DataScraperServiceImpl implements DataScraperService {
                 .optionType(upstoxInstrument.getOptionType())
                 .build();
     }
-    
+
     private com.quantz.marketdata.entity.CandleData convertToEntity(CandleData candleData) {
         return com.quantz.marketdata.entity.CandleData.builder()
                 .instrumentKey(candleData.getInstrumentKey())
@@ -263,7 +263,7 @@ public class DataScraperServiceImpl implements DataScraperService {
                 .volume(candleData.getVolume())
                 .build();
     }
-    
+
     private <T> List<List<T>> splitIntoBatches(List<T> items, int batchSize) {
         List<List<T>> batches = new ArrayList<>();
         for (int i = 0; i < items.size(); i += batchSize) {
@@ -272,7 +272,7 @@ public class DataScraperServiceImpl implements DataScraperService {
         }
         return batches;
     }
-    
+
     private void saveSuccessMetadata(LocalDate scrapeDate, int instrumentCount, int dataPoints, boolean isFullScrape) {
         ScrapingMetadata metadata = ScrapingMetadata.builder()
                 .scrapeDate(scrapeDate)
@@ -282,11 +282,11 @@ public class DataScraperServiceImpl implements DataScraperService {
                 .fullScrape(isFullScrape)
                 .status("COMPLETED")
                 .build();
-        
+
         metadataRepository.save(metadata);
         log.info("Scraping operation completed successfully");
     }
-    
+
     private void saveFailedMetadata(String status, String details) {
         ScrapingMetadata metadata = ScrapingMetadata.builder()
                 .scrapeDate(LocalDate.now())
@@ -297,7 +297,7 @@ public class DataScraperServiceImpl implements DataScraperService {
                 .status(status)
                 .details(details)
                 .build();
-        
+
         metadataRepository.save(metadata);
         log.error("Scraping operation failed: {}", details);
     }

@@ -43,34 +43,34 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
     public TokenResponse getAccessToken(String authorizationCode) {
         try {
             log.debug("Exchanging authorization code for access token...");
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            
+
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("code", authorizationCode);
             formData.add("client_id", upstoxProperties.getAuth().getClientId());
             formData.add("client_secret", upstoxProperties.getAuth().getClientSecret());
             formData.add("redirect_uri", upstoxProperties.getAuth().getRedirectUri());
             formData.add("grant_type", "authorization_code");
-            
+
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-            
+
             ResponseEntity<TokenResponse> response = restTemplate.postForEntity(
                     upstoxProperties.getAuth().getTokenEndpoint(),
                     request,
                     TokenResponse.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 TokenResponse tokenResponse = response.getBody();
-                
+
                 // Calculate expiry time
                 LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(tokenResponse.getExpiresIn());
                 tokenResponse.setExpiryTime(expiryTime);
-                
+
                 // Save token to database
                 saveToken(tokenResponse);
-                
+
                 log.info("Successfully obtained access token, expires at: {}", expiryTime);
                 return tokenResponse;
             } else {
@@ -87,38 +87,38 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
     public TokenResponse refreshAccessToken(String refreshToken) {
         try {
             log.debug("Refreshing access token...");
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            
+
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("refresh_token", refreshToken);
             formData.add("client_id", upstoxProperties.getAuth().getClientId());
             formData.add("client_secret", upstoxProperties.getAuth().getClientSecret());
             formData.add("grant_type", "refresh_token");
-            
+
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-            
+
             ResponseEntity<TokenResponse> response = restTemplate.postForEntity(
                     upstoxProperties.getAuth().getTokenEndpoint(),
                     request,
                     TokenResponse.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 TokenResponse tokenResponse = response.getBody();
-                
+
                 // Calculate expiry time
                 LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(tokenResponse.getExpiresIn());
                 tokenResponse.setExpiryTime(expiryTime);
-                
+
                 // If refresh token is null in the response, use the old one
                 if (tokenResponse.getRefreshToken() == null) {
                     tokenResponse.setRefreshToken(refreshToken);
                 }
-                
+
                 // Save token to database
                 saveToken(tokenResponse);
-                
+
                 log.info("Successfully refreshed access token, expires at: {}", expiryTime);
                 return tokenResponse;
             } else {
@@ -134,14 +134,14 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
     @Override
     public String getCurrentAccessToken() {
         Optional<OAuthToken> latestToken = tokenRepository.findLatestToken();
-        
+
         if (latestToken.isPresent()) {
             OAuthToken token = latestToken.get();
-            
+
             // Check if token is expired or about to expire
             LocalDateTime bufferTime = LocalDateTime.now()
                     .plusSeconds(upstoxProperties.getAuth().getTokenExpiryBufferSeconds());
-            
+
             if (token.getExpiresAt().isBefore(bufferTime)) {
                 // Token is expired or about to expire, refresh it
                 log.info("Token is expired or will expire soon, refreshing...");
@@ -153,7 +153,7 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
                     throw new RestClientException("Failed to obtain valid access token", e);
                 }
             }
-            
+
             return token.getAccessToken();
         } else {
             log.error("No access token found in database");
@@ -164,14 +164,14 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
     @Override
     public boolean isTokenValid() {
         Optional<OAuthToken> latestToken = tokenRepository.findLatestToken();
-        
+
         if (latestToken.isPresent()) {
             OAuthToken token = latestToken.get();
-            
+
             // Check if token is expired or about to expire
             LocalDateTime bufferTime = LocalDateTime.now()
                     .plusSeconds(upstoxProperties.getAuth().getTokenExpiryBufferSeconds());
-            
+
             if (token.getExpiresAt().isBefore(bufferTime)) {
                 // Token is expired or about to expire, try to refresh it
                 try {
@@ -183,10 +183,10 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
                     return false;
                 }
             }
-            
+
             return true;
         }
-        
+
         log.warn("No token found in database");
         return false;
     }
@@ -199,7 +199,7 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
         headers.setBearerAuth(getCurrentAccessToken());
         return headers;
     }
-    
+
     /**
      * Save token information to database
      */
@@ -210,7 +210,7 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
                 .tokenType(tokenResponse.getTokenType())
                 .expiresAt(tokenResponse.getExpiryTime())
                 .build();
-        
+
         tokenRepository.save(oAuthToken);
         log.debug("Saved token to database, expires at: {}", oAuthToken.getExpiresAt());
     }

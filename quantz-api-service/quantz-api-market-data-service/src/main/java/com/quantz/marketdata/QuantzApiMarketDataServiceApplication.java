@@ -13,9 +13,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableRetry
 @EnableAsync
-public class FinancialScraperApplication {
+public class QuantzApiMarketDataServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(FinancialScraperApplication.class, args);
+        SpringApplication.run(QuantzApiMarketDataServiceApplication.class, args);
     }
 }

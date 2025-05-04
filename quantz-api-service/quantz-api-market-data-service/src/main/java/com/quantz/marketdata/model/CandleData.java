@@ -18,10 +18,10 @@ import java.time.LocalDateTime;
 public class CandleData {
     private String instrumentKey;
     private String interval;
-    
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime timestamp;
-    
+
     private Double open;
     private Double high;
     private Double low;

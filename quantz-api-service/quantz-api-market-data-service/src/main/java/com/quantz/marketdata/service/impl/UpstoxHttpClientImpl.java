@@ -31,23 +31,23 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
     private final RestTemplate restTemplate;
     private final UpstoxAuthService authService;
     private final UpstoxProperties upstoxProperties;
-    
+
     // Track request timing for rate limiting
     private long lastRequestTime = 0;
     private final Object rateLimitLock = new Object();
 
     @Override
     @Retryable(
-        value = {HttpServerErrorException.class, HttpClientErrorException.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 1000, multiplier = 2)
+            retryFor = {HttpServerErrorException.class, HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public <T> ResponseEntity<T> get(String path, Class<T> responseType) {
         String url = buildUrl(path);
         HttpHeaders headers = authService.createAuthHeaders();
-        
+
         HttpEntity<?> entity = new HttpEntity<>(headers);
-        
+
         try {
             applyRateLimit();
             log.debug("Sending GET request to: {}", url);
@@ -55,11 +55,11 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             updateLastRequestTime();
             return response;
         } catch (HttpClientErrorException e) {
-            log.error("HTTP client error during GET request to {}: {} - {}", 
+            log.error("HTTP client error during GET request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (HttpServerErrorException e) {
-            log.error("HTTP server error during GET request to {}: {} - {}", 
+            log.error("HTTP server error during GET request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (Exception e) {
@@ -70,13 +70,14 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
 
     @Override
     @Retryable(
-        value = {HttpServerErrorException.class, HttpClientErrorException.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 1000, multiplier = 2)
+            retryFor = {HttpServerErrorException.class, HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public <T> ResponseEntity<T> get(String path, Map<String, Object> queryParams, Class<T> responseType) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(buildUrl(path));
-        
+        // Replace deprecated fromHttpUrl with fromUriString
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(buildUrl(path));
+
         if (queryParams != null) {
             queryParams.forEach((key, value) -> {
                 if (value != null) {
@@ -84,12 +85,12 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
                 }
             });
         }
-        
+
         String url = builder.build().toString();
         HttpHeaders headers = authService.createAuthHeaders();
-        
+
         HttpEntity<?> entity = new HttpEntity<>(headers);
-        
+
         try {
             applyRateLimit();
             log.debug("Sending GET request to: {}", url);
@@ -97,11 +98,11 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             updateLastRequestTime();
             return response;
         } catch (HttpClientErrorException e) {
-            log.error("HTTP client error during GET request to {}: {} - {}", 
+            log.error("HTTP client error during GET request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (HttpServerErrorException e) {
-            log.error("HTTP server error during GET request to {}: {} - {}", 
+            log.error("HTTP server error during GET request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (Exception e) {
@@ -112,16 +113,16 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
 
     @Override
     @Retryable(
-        value = {HttpServerErrorException.class, HttpClientErrorException.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 1000, multiplier = 2)
+            retryFor = {HttpServerErrorException.class, HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public <T> ResponseEntity<T> post(String path, Object requestBody, Class<T> responseType) {
         String url = buildUrl(path);
         HttpHeaders headers = authService.createAuthHeaders();
-        
+
         HttpEntity<?> entity = new HttpEntity<>(requestBody, headers);
-        
+
         try {
             applyRateLimit();
             log.debug("Sending POST request to: {}", url);
@@ -129,11 +130,11 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             updateLastRequestTime();
             return response;
         } catch (HttpClientErrorException e) {
-            log.error("HTTP client error during POST request to {}: {} - {}", 
+            log.error("HTTP client error during POST request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (HttpServerErrorException e) {
-            log.error("HTTP server error during POST request to {}: {} - {}", 
+            log.error("HTTP server error during POST request to {}: {} - {}",
                     url, e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (Exception e) {
@@ -144,30 +145,30 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
 
     @Override
     @Retryable(
-        value = {HttpServerErrorException.class, HttpClientErrorException.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 1000, multiplier = 2)
+            retryFor = {HttpServerErrorException.class, HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public <T> ResponseEntity<T> exchange(RequestEntity<?> requestEntity, Class<T> responseType) throws RestClientException {
         try {
             applyRateLimit();
-            
+
             // Log the request if debug is enabled
             if (log.isDebugEnabled()) {
                 URI uri = requestEntity.getUrl();
                 HttpMethod method = requestEntity.getMethod();
                 log.debug("Sending {} request to: {}", method, uri);
             }
-            
+
             ResponseEntity<T> response = restTemplate.exchange(requestEntity, responseType);
             updateLastRequestTime();
             return response;
         } catch (HttpClientErrorException e) {
-            log.error("HTTP client error during request: {} - {}", 
+            log.error("HTTP client error during request: {} - {}",
                     e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (HttpServerErrorException e) {
-            log.error("HTTP server error during request: {} - {}", 
+            log.error("HTTP server error during request: {} - {}",
                     e.getStatusCode(), e.getResponseBodyAsString());
             throw e;
         } catch (Exception e) {
@@ -175,7 +176,7 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             throw new RestClientException("Error during request: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Build full URL from path
      */
@@ -183,16 +184,16 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
         if (path.startsWith("http")) {
             return path;
         }
-        
+
         String baseUrl = upstoxProperties.getBaseUrl();
-        
+
         if (path.startsWith("/")) {
             return baseUrl + path;
         } else {
             return baseUrl + "/" + path;
         }
     }
-    
+
     /**
      * Apply rate limiting to respect API limits
      */
@@ -200,10 +201,10 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
         synchronized (rateLimitLock) {
             long currentTime = System.currentTimeMillis();
             long elapsedTime = currentTime - lastRequestTime;
-            
+
             int maxRequestsPerSecond = upstoxProperties.getApi().getMaxRequestsPerSecond();
             long minIntervalMs = 1000 / Math.max(1, maxRequestsPerSecond);
-            
+
             if (lastRequestTime > 0 && elapsedTime < minIntervalMs) {
                 long sleepTime = minIntervalMs - elapsedTime;
                 try {
@@ -215,7 +216,7 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             }
         }
     }
-    
+
     /**
      * Update the timestamp of the last request
      */

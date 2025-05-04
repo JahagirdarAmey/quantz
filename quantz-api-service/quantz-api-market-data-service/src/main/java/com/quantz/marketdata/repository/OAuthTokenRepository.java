@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface OAuthTokenRepository extends JpaRepository<OAuthToken, Long> {
-    
+
     @Query("SELECT t FROM OAuthToken t ORDER BY t.createdAt DESC")
     Optional<OAuthToken> findLatestToken();
 }

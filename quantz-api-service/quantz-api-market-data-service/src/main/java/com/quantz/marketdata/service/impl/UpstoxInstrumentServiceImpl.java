@@ -33,7 +33,7 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
     private final UpstoxHttpClient upstoxHttpClient;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
-    
+
     // In-memory cache for instruments
     private final Map<String, UpstoxInstrument> instrumentCache = new ConcurrentHashMap<>();
     private LocalDateTime lastCacheRefresh = null;
@@ -45,7 +45,7 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         if (!isCacheValid()) {
             refreshInstrumentCache();
         }
-        
+
         // Return all instruments from cache
         return new ArrayList<>(instrumentCache.values());
     }
@@ -57,7 +57,7 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         if (!isCacheValid()) {
             refreshInstrumentCache();
         }
-        
+
         // Filter instruments by exchange
         return instrumentCache.values().stream()
                 .filter(instrument -> exchange.equals(instrument.getExchange()))
@@ -71,7 +71,7 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         if (!isCacheValid()) {
             refreshInstrumentCache();
         }
-        
+
         // Filter instruments by segment
         return instrumentCache.values().stream()
                 .filter(instrument -> segment.equals(instrument.getSegment()))
@@ -85,34 +85,34 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         if (!isCacheValid()) {
             refreshInstrumentCache();
         }
-        
+
         // Get instrument by key
         return instrumentCache.get(instrumentKey);
     }
-    
+
     @Override
     @Transactional
     public int saveInstruments(List<UpstoxInstrument> instruments) {
         if (instruments == null || instruments.isEmpty()) {
             return 0;
         }
-        
+
         // Update in-memory cache
-        instruments.forEach(instrument -> 
-            instrumentCache.put(instrument.getInstrumentKey(), instrument));
-        
+        instruments.forEach(instrument ->
+                instrumentCache.put(instrument.getInstrumentKey(), instrument));
+
         // Convert to entity objects
         List<Instrument> entityInstruments = instruments.stream()
                 .map(this::convertToEntity)
                 .collect(Collectors.toList());
-        
+
         // Save to database in batches to avoid overwhelming the database
         int totalSaved = saveBatches(entityInstruments, 500);
-        
+
         log.info("Saved {} instruments to database", totalSaved);
         return totalSaved;
     }
-    
+
     /**
      * Clear and refresh the instrument cache daily at 6 AM
      */
@@ -122,73 +122,73 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         log.info("Scheduled refresh of instrument cache");
         refreshInstrumentCache();
     }
-    
+
     /**
      * Refresh the instrument cache with data from Upstox
      */
     private synchronized void refreshInstrumentCache() {
         log.info("Refreshing instrument cache");
         instrumentCache.clear();
-        
+
         try {
             // Load NSE instruments
             List<UpstoxInstrument> nseInstruments = loadInstrumentsFromUrl(
                     upstoxProperties.getInstruments().getBodInstrumentsUrl());
             if (nseInstruments != null && !nseInstruments.isEmpty()) {
-                nseInstruments.forEach(instrument -> 
-                    instrumentCache.put(instrument.getInstrumentKey(), instrument));
+                nseInstruments.forEach(instrument ->
+                        instrumentCache.put(instrument.getInstrumentKey(), instrument));
                 log.info("Loaded {} NSE instruments", nseInstruments.size());
             }
-            
+
             // Load NSE F&O instruments
             List<UpstoxInstrument> nfoInstruments = loadInstrumentsFromUrl(
                     upstoxProperties.getInstruments().getNfoInstrumentsUrl());
             if (nfoInstruments != null && !nfoInstruments.isEmpty()) {
-                nfoInstruments.forEach(instrument -> 
-                    instrumentCache.put(instrument.getInstrumentKey(), instrument));
+                nfoInstruments.forEach(instrument ->
+                        instrumentCache.put(instrument.getInstrumentKey(), instrument));
                 log.info("Loaded {} NSE F&O instruments", nfoInstruments.size());
             }
-            
+
             // Load BSE instruments
             List<UpstoxInstrument> bseInstruments = loadInstrumentsFromUrl(
                     upstoxProperties.getInstruments().getBseInstrumentsUrl());
             if (bseInstruments != null && !bseInstruments.isEmpty()) {
-                bseInstruments.forEach(instrument -> 
-                    instrumentCache.put(instrument.getInstrumentKey(), instrument));
+                bseInstruments.forEach(instrument ->
+                        instrumentCache.put(instrument.getInstrumentKey(), instrument));
                 log.info("Loaded {} BSE instruments", bseInstruments.size());
             }
-            
+
             // Load BSE F&O instruments if URL is available
             if (upstoxProperties.getInstruments().getBfoInstrumentsUrl() != null) {
                 List<UpstoxInstrument> bfoInstruments = loadInstrumentsFromUrl(
                         upstoxProperties.getInstruments().getBfoInstrumentsUrl());
                 if (bfoInstruments != null && !bfoInstruments.isEmpty()) {
-                    bfoInstruments.forEach(instrument -> 
-                        instrumentCache.put(instrument.getInstrumentKey(), instrument));
+                    bfoInstruments.forEach(instrument ->
+                            instrumentCache.put(instrument.getInstrumentKey(), instrument));
                     log.info("Loaded {} BSE F&O instruments", bfoInstruments.size());
                 }
             }
-            
+
             // Load MCX instruments if URL is available
             if (upstoxProperties.getInstruments().getMcxInstrumentsUrl() != null) {
                 List<UpstoxInstrument> mcxInstruments = loadInstrumentsFromUrl(
                         upstoxProperties.getInstruments().getMcxInstrumentsUrl());
                 if (mcxInstruments != null && !mcxInstruments.isEmpty()) {
-                    mcxInstruments.forEach(instrument -> 
-                        instrumentCache.put(instrument.getInstrumentKey(), instrument));
+                    mcxInstruments.forEach(instrument ->
+                            instrumentCache.put(instrument.getInstrumentKey(), instrument));
                     log.info("Loaded {} MCX instruments", mcxInstruments.size());
                 }
             }
-            
+
             // Update cache timestamp
             lastCacheRefresh = LocalDateTime.now();
-            
+
             log.info("Instrument cache refreshed, total instruments: {}", instrumentCache.size());
         } catch (Exception e) {
             log.error("Error refreshing instrument cache: {}", e.getMessage(), e);
         }
     }
-    
+
     /**
      * Load instruments from a URL
      */
@@ -196,11 +196,12 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         try {
             // Directly use RestTemplate instead of UpstoxHttpClient since these URLs don't require authentication
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return objectMapper.readValue(
-                        response.getBody(), 
-                        new TypeReference<List<UpstoxInstrument>>() {});
+                        response.getBody(),
+                        new TypeReference<List<UpstoxInstrument>>() {
+                        });
             } else {
                 log.error("Failed to load instruments from {}: {}", url, response.getStatusCode());
                 return Collections.emptyList();
@@ -210,7 +211,7 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
             return Collections.emptyList();
         }
     }
-    
+
     /**
      * Check if the cache is still valid
      */
@@ -218,12 +219,12 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
         if (lastCacheRefresh == null || instrumentCache.isEmpty()) {
             return false;
         }
-        
+
         // Check if cache has expired
         return LocalDateTime.now().isBefore(
                 lastCacheRefresh.plusMinutes(upstoxProperties.getInstruments().getCacheExpiryMinutes()));
     }
-    
+
     /**
      * Convert from model to entity
      */
@@ -244,24 +245,24 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
                 .optionType(model.getOptionType())
                 .build();
     }
-    
+
     /**
      * Save instruments in batches to avoid OOM
      */
     private int saveBatches(List<Instrument> instruments, int batchSize) {
         int total = 0;
-        
+
         for (int i = 0; i < instruments.size(); i += batchSize) {
             int endIndex = Math.min(i + batchSize, instruments.size());
             List<Instrument> batch = instruments.subList(i, endIndex);
-            
+
             List<Instrument> saved = instrumentRepository.saveAll(batch);
             total += saved.size();
-            
-            log.debug("Saved batch of {} instruments, progress: {}/{}", 
+
+            log.debug("Saved batch of {} instruments, progress: {}/{}",
                     saved.size(), total, instruments.size());
         }
-        
+
         return total;
     }
 }
