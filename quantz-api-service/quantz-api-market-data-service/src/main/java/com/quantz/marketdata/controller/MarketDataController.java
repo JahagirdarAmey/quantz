@@ -6,8 +6,8 @@ import com.quantz.marketdata.entity.ScrapingMetadata;
 import com.quantz.marketdata.repository.CandleDataRepository;
 import com.quantz.marketdata.repository.InstrumentRepository;
 import com.quantz.marketdata.repository.ScrapingMetadataRepository;
-import com.quantz.marketdata.service.DataScraperService;
-import lombok.RequiredArgsConstructor;
+import com.quantz.marketdata.service.MarketDataScraperService;
+import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +18,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/market-data")
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class MarketDataController {
 
-    private final DataScraperService dataScraperService;
+    private final MarketDataScraperService marketDataScraperService;
     private final InstrumentRepository instrumentRepository;
     private final CandleDataRepository candleDataRepository;
     private final ScrapingMetadataRepository metadataRepository;
@@ -29,7 +29,7 @@ public class MarketDataController {
     @PostMapping("/scrape")
     public ResponseEntity<String> triggerScraping() {
         try {
-            dataScraperService.manualScraping();
+            marketDataScraperService.manualScraping();
             return ResponseEntity.ok("Market data scraping started successfully");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error starting scraping: " + e.getMessage());

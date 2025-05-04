@@ -7,7 +7,7 @@ import com.quantz.marketdata.model.UpstoxInstrument;
 import com.quantz.marketdata.repository.CandleDataRepository;
 import com.quantz.marketdata.repository.InstrumentRepository;
 import com.quantz.marketdata.repository.ScrapingMetadataRepository;
-import com.quantz.marketdata.service.DataScraperService;
+import com.quantz.marketdata.service.MarketDataScraperService;
 import com.quantz.marketdata.service.UpstoxAuthService;
 import com.quantz.marketdata.service.UpstoxInstrumentService;
 import com.quantz.marketdata.service.UpstoxMarketDataService;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DataScraperServiceImpl implements DataScraperService {
+public class MarketDataScraperServiceImpl implements MarketDataScraperService {
 
     private final UpstoxAuthService authService;
     private final UpstoxInstrumentService instrumentService;

@@ -5,6 +5,7 @@ import com.quantz.marketdata.entity.OAuthToken;
 import com.quantz.marketdata.model.TokenResponse;
 import com.quantz.marketdata.repository.OAuthTokenRepository;
 import com.quantz.marketdata.service.UpstoxAuthService;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -21,7 +22,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class UpstoxAuthServiceImpl implements UpstoxAuthService {
 
     private final UpstoxProperties upstoxProperties;
@@ -31,7 +32,7 @@ public class UpstoxAuthServiceImpl implements UpstoxAuthService {
     @Override
     public String getAuthorizationUrl() {
         return UriComponentsBuilder
-                .fromHttpUrl(upstoxProperties.getAuth().getAuthorizationEndpoint())
+                .fromUriString(upstoxProperties.getAuth().getAuthorizationEndpoint())
                 .queryParam("response_type", "code")
                 .queryParam("client_id", upstoxProperties.getAuth().getClientId())
                 .queryParam("redirect_uri", upstoxProperties.getAuth().getRedirectUri())

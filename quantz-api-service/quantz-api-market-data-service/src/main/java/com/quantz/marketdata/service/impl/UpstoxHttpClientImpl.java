@@ -75,7 +75,6 @@ public class UpstoxHttpClientImpl implements UpstoxHttpClient {
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public <T> ResponseEntity<T> get(String path, Map<String, Object> queryParams, Class<T> responseType) {
-        // Replace deprecated fromHttpUrl with fromUriString
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(buildUrl(path));
 
         if (queryParams != null) {

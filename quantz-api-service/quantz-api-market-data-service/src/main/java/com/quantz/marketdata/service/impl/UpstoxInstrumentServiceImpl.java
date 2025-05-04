@@ -8,6 +8,7 @@ import com.quantz.marketdata.model.UpstoxInstrument;
 import com.quantz.marketdata.repository.InstrumentRepository;
 import com.quantz.marketdata.service.UpstoxHttpClient;
 import com.quantz.marketdata.service.UpstoxInstrumentService;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
 
     private final UpstoxProperties upstoxProperties;
