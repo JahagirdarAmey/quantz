@@ -26,11 +26,7 @@
     </properties>
 
     <modules>
-        <module>quantz-common</module>
-        <module>quantz-strategy</module>
-        <module>quantz-api</module>
         <module>quantz-api-service</module>
-        <module>quantz-event-lib</module>
     </modules>
 
     <dependencyManagement>
