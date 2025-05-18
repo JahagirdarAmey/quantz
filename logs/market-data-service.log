@@ -162,3 +162,8 @@ Consider defining a bean of type 'java.time.LocalDateTime' in your configuration
 2025-05-18 09:07:19 [http-nio-8081-exec-2] WARN  c.q.m.s.impl.UpstoxAuthServiceImpl - No token found in database
 2025-05-18 09:07:19 [http-nio-8081-exec-2] ERROR c.q.m.s.i.MarketDataScraperServiceImpl - No valid authentication token available. Aborting scraping.
 2025-05-18 09:07:19 [http-nio-8081-exec-2] ERROR c.q.m.s.i.MarketDataScraperServiceImpl - Scraping operation failed: No valid authentication token available
+2025-05-18 09:17:03 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-05-18 09:17:03 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-05-18 09:17:03 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-05-18 09:17:03 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-05-18 09:17:03 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
