@@ -1,0 +1,227 @@
+{
+	"info": {
+		"name": "Quantz Market Data API",
+		"description": "A collection for accessing market data from the Quantz API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Trigger Market Data Scraping",
+			"request": {
+				"method": "POST",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/scrape",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "scrape"]
+				},
+				"description": "Manually trigger the market data scraping process"
+			}
+		},
+		{
+			"name": "Get All Instruments",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments"]
+				},
+				"description": "Get all available instruments without any filtering"
+			}
+		},
+		{
+			"name": "Filter Instruments by Exchange",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments?exchange=NSE",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments"],
+					"query": [
+						{
+							"key": "exchange",
+							"value": "NSE"
+						}
+					]
+				},
+				"description": "Get instruments filtered by exchange (e.g., NSE, BSE)"
+			}
+		},
+		{
+			"name": "Filter Instruments by Segment",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments?segment=EQ",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments"],
+					"query": [
+						{
+							"key": "segment",
+							"value": "EQ"
+						}
+					]
+				},
+				"description": "Get instruments filtered by segment (e.g., EQ for Equity)"
+			}
+		},
+		{
+			"name": "Filter Instruments by Type",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments?instrumentType=STOCK",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments"],
+					"query": [
+						{
+							"key": "instrumentType",
+							"value": "STOCK"
+						}
+					]
+				},
+				"description": "Get instruments filtered by instrument type (e.g., STOCK, FUTURE, OPTION)"
+			}
+		},
+		{
+			"name": "Search Instruments",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments?search=RELIANCE",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments"],
+					"query": [
+						{
+							"key": "search",
+							"value": "RELIANCE"
+						}
+					]
+				},
+				"description": "Search instruments by name or symbol"
+			}
+		},
+		{
+			"name": "Get Instrument by Key",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/instruments/NSE_EQ_RELIANCE",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "instruments", "NSE_EQ_RELIANCE"]
+				},
+				"description": "Get details of a specific instrument by its key"
+			}
+		},
+		{
+			"name": "Get Candle Data (Default)",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/candles/NSE_EQ_RELIANCE",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "candles", "NSE_EQ_RELIANCE"]
+				},
+				"description": "Get all candle data for an instrument using default interval (1d)"
+			}
+		},
+		{
+			"name": "Get Candle Data (Custom Interval)",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/candles/NSE_EQ_RELIANCE?interval=5m",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "candles", "NSE_EQ_RELIANCE"],
+					"query": [
+						{
+							"key": "interval",
+							"value": "5m"
+						}
+					]
+				},
+				"description": "Get candle data for an instrument with a specific interval (e.g., 5m, 15m, 1h)"
+			}
+		},
+		{
+			"name": "Get Candle Data (Date Range)",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/candles/NSE_EQ_RELIANCE?interval=1d&startTime=2025-01-01T00:00:00&endTime=2025-05-18T00:00:00",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "candles", "NSE_EQ_RELIANCE"],
+					"query": [
+						{
+							"key": "interval",
+							"value": "1d"
+						},
+						{
+							"key": "startTime",
+							"value": "2025-01-01T00:00:00"
+						},
+						{
+							"key": "endTime",
+							"value": "2025-05-18T00:00:00"
+						}
+					]
+				},
+				"description": "Get candle data for an instrument within a specific date range"
+			}
+		},
+		{
+			"name": "Get All Scraping History",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/scraping-history",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "scraping-history"]
+				},
+				"description": "Get all scraping history entries"
+			}
+		},
+		{
+			"name": "Get Latest Scraping",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "http://localhost:8081/api/market-data/scraping-history/latest",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8081",
+					"path": ["api", "market-data", "scraping-history", "latest"]
+				},
+				"description": "Get the most recent scraping metadata"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8081"
+		}
+	]
+}

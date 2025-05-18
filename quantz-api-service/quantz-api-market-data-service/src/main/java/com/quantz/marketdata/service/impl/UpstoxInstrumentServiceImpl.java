@@ -8,8 +8,6 @@ import com.quantz.marketdata.model.UpstoxInstrument;
 import com.quantz.marketdata.repository.InstrumentRepository;
 import com.quantz.marketdata.service.UpstoxHttpClient;
 import com.quantz.marketdata.service.UpstoxInstrumentService;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,7 +24,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
 
     private final UpstoxProperties upstoxProperties;
@@ -34,6 +31,14 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
     private final UpstoxHttpClient upstoxHttpClient;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
+
+    public UpstoxInstrumentServiceImpl(UpstoxProperties upstoxProperties, InstrumentRepository instrumentRepository, UpstoxHttpClient upstoxHttpClient, ObjectMapper objectMapper, RestTemplate restTemplate) {
+        this.upstoxProperties = upstoxProperties;
+        this.instrumentRepository = instrumentRepository;
+        this.upstoxHttpClient = upstoxHttpClient;
+        this.objectMapper = objectMapper;
+        this.restTemplate = restTemplate;
+    }
 
     // In-memory cache for instruments
     private final Map<String, UpstoxInstrument> instrumentCache = new ConcurrentHashMap<>();

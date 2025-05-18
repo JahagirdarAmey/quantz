@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UpstoxInstrument {
+
     private String segment;
     private String name;
     private String exchange;
