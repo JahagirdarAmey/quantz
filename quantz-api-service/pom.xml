@@ -18,7 +18,5 @@
         <module>quantz-api-market-data-service</module>
         <module>quantz-api-backest-service</module>
         <module>quantz-api-instruments-service</module>
-        <module>quantz-api-strategies-service</module>
-        <module>quantz-api-results-service</module>
     </modules>
 </project>
