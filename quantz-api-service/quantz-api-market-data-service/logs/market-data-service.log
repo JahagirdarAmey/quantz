@@ -1,0 +1,12 @@
+2025-05-31 11:56:25 [main] INFO  c.q.m.c.MarketDataControllerTest - Starting MarketDataControllerTest using Java 23.0.2 with PID 7136 (started by PC in C:\Users\PC\Documents\workspace\quantz\quantz\quantz-api-service\quantz-api-market-data-service)
+2025-05-31 11:56:25 [main] INFO  c.q.m.c.MarketDataControllerTest - No active profile set, falling back to 1 default profile: "default"
+2025-05-31 11:56:26 [main] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2025-05-31 11:56:26 [main] INFO  o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2025-05-31 11:56:26 [main] INFO  o.s.t.w.s.TestDispatcherServlet - Completed initialization in 0 ms
+2025-05-31 11:56:26 [main] INFO  c.q.m.c.MarketDataControllerTest - Started MarketDataControllerTest in 1.542 seconds (process running for 2.188)
+2025-05-31 12:01:12 [main] INFO  c.q.m.c.MarketDataControllerTest - Starting MarketDataControllerTest using Java 23.0.2 with PID 3132 (started by PC in C:\Users\PC\Documents\workspace\quantz\quantz\quantz-api-service\quantz-api-market-data-service)
+2025-05-31 12:01:12 [main] INFO  c.q.m.c.MarketDataControllerTest - No active profile set, falling back to 1 default profile: "default"
+2025-05-31 12:01:13 [main] INFO  o.s.b.t.m.w.SpringBootMockServletContext - Initializing Spring TestDispatcherServlet ''
+2025-05-31 12:01:13 [main] INFO  o.s.t.w.s.TestDispatcherServlet - Initializing Servlet ''
+2025-05-31 12:01:13 [main] INFO  o.s.t.w.s.TestDispatcherServlet - Completed initialization in 1 ms
+2025-05-31 12:01:13 [main] INFO  c.q.m.c.MarketDataControllerTest - Started MarketDataControllerTest in 1.511 seconds (process running for 2.111)
