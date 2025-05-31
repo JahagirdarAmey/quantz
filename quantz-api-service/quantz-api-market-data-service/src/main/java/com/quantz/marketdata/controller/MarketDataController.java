@@ -3,9 +3,6 @@ package com.quantz.marketdata.controller;
 import com.quantz.marketdata.entity.CandleData;
 import com.quantz.marketdata.entity.Instrument;
 import com.quantz.marketdata.entity.ScrapingMetadata;
-import com.quantz.marketdata.repository.CandleDataRepository;
-import com.quantz.marketdata.repository.InstrumentRepository;
-import com.quantz.marketdata.repository.ScrapingMetadataRepository;
 import com.quantz.marketdata.service.MarketDataScraperService;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/market-data")
@@ -22,18 +18,11 @@ import java.util.Optional;
 public class MarketDataController {
 
     private final MarketDataScraperService marketDataScraperService;
-    private final InstrumentRepository instrumentRepository;
-    private final CandleDataRepository candleDataRepository;
-    private final ScrapingMetadataRepository metadataRepository;
 
     @PostMapping("/scrape")
     public ResponseEntity<String> triggerScraping() {
-        try {
-            marketDataScraperService.manualScraping();
-            return ResponseEntity.ok("Market data scraping started successfully");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error starting scraping: " + e.getMessage());
-        }
+        marketDataScraperService.manualScraping();
+        return ResponseEntity.ok("Market data scraping started successfully");
     }
 
     @GetMapping("/instruments")
@@ -42,27 +31,13 @@ public class MarketDataController {
             @RequestParam(required = false) String segment,
             @RequestParam(required = false) String instrumentType,
             @RequestParam(required = false) String search) {
-
-        List<Instrument> instruments;
-
-        if (exchange != null && !exchange.isEmpty()) {
-            instruments = instrumentRepository.findByExchange(exchange);
-        } else if (segment != null && !segment.isEmpty()) {
-            instruments = instrumentRepository.findBySegment(segment);
-        } else if (instrumentType != null && !instrumentType.isEmpty()) {
-            instruments = instrumentRepository.findByInstrumentType(instrumentType);
-        } else if (search != null && !search.isEmpty()) {
-            instruments = instrumentRepository.searchByNameOrSymbol(search);
-        } else {
-            instruments = instrumentRepository.findAll();
-        }
-
+        List<Instrument> instruments = marketDataScraperService.findInstruments(exchange, segment, instrumentType, search);
         return ResponseEntity.ok(instruments);
     }
 
     @GetMapping("/instruments/{instrumentKey}")
     public ResponseEntity<Instrument> getInstrument(@PathVariable String instrumentKey) {
-        return instrumentRepository.findById(instrumentKey)
+        return marketDataScraperService.findInstrumentByKey(instrumentKey)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -74,28 +49,20 @@ public class MarketDataController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
 
-        List<CandleData> candleData;
-
-        if (startTime != null && endTime != null) {
-            candleData = candleDataRepository.findByInstrumentKeyAndIntervalAndTimestampBetweenOrderByTimestampAsc(
-                    instrumentKey, interval, startTime, endTime);
-        } else {
-            candleData = candleDataRepository.findByInstrumentKeyAndIntervalOrderByTimestampAsc(
-                    instrumentKey, interval);
-        }
-
+        List<CandleData> candleData = marketDataScraperService.findCandleData(instrumentKey, interval, startTime, endTime);
         return ResponseEntity.ok(candleData);
     }
 
+
     @GetMapping("/scraping-history")
     public ResponseEntity<List<ScrapingMetadata>> getScrapingHistory() {
-        return ResponseEntity.ok(metadataRepository.findAll());
+        List<ScrapingMetadata> history = marketDataScraperService.getScrapingHistory();
+        return ResponseEntity.ok(history);
     }
 
     @GetMapping("/scraping-history/latest")
     public ResponseEntity<ScrapingMetadata> getLatestScraping() {
-        Optional<ScrapingMetadata> latestScraping = metadataRepository.findLatestScraping();
-        return latestScraping
+        return marketDataScraperService.getLatestScrapingMetadata()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

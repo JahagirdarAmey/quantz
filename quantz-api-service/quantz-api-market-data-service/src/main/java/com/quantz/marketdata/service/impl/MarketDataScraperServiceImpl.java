@@ -16,11 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -53,6 +55,47 @@ public class MarketDataScraperServiceImpl implements MarketDataScraperService {
     public void manualScraping() {
         log.info("Starting manual market data scraping at {}", LocalDateTime.now());
         scrapeData();
+    }
+
+    @Override
+    public List<Instrument> findInstruments(String exchange, String segment, String instrumentType, String search) {
+        if (StringUtils.hasText(exchange)) {
+            return instrumentRepository.findByExchange(exchange);
+        } else if (StringUtils.hasText(segment)) {
+            return instrumentRepository.findBySegment(segment);
+        } else if (StringUtils.hasText(instrumentType)) {
+            return instrumentRepository.findByInstrumentType(instrumentType);
+        } else if (StringUtils.hasText(search)) {
+            return instrumentRepository.searchByNameOrSymbol(search);
+        } else {
+            return instrumentRepository.findAll();
+        }
+    }
+
+    @Override
+    public Optional<Instrument> findInstrumentByKey(String instrumentKey) {
+        return instrumentRepository.findById(instrumentKey);
+    }
+
+    @Override
+    public List<com.quantz.marketdata.entity.CandleData> findCandleData(String instrumentKey, String interval, LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime != null && endTime != null) {
+            return candleDataRepository.findByInstrumentKeyAndIntervalAndTimestampBetweenOrderByTimestampAsc(
+                    instrumentKey, interval, startTime, endTime);
+        } else {
+            return candleDataRepository.findByInstrumentKeyAndIntervalOrderByTimestampAsc(
+                    instrumentKey, interval);
+        }
+    }
+
+    @Override
+    public List<com.quantz.marketdata.entity.ScrapingMetadata> getScrapingHistory() {
+        return metadataRepository.findAll();
+    }
+
+    @Override
+    public Optional<com.quantz.marketdata.entity.ScrapingMetadata> getLatestScrapingMetadata() {
+        return metadataRepository.findLatestScraping();
     }
 
     @Transactional
