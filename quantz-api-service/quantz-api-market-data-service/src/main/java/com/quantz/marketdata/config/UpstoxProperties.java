@@ -45,10 +45,10 @@ public class UpstoxProperties {
     @Data
     public static class Instruments {
         private String bodInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/NSE.json";
-        private String nfoInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/NSE_FO.json";
-        private String bseInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/BSE.json";
-        private String bfoInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/BSE_FO.json";
-        private String mcxInstrumentsUrl = "https://assets.upstox.com/market-data/instruments/exchange/MCX.json";
+        private String nfoInstrumentsUrl = ""; //"https://assets.upstox.com/market-data/instruments/exchange/NSE_FO.json";
+        private String bseInstrumentsUrl = ""; //"https://assets.upstox.com/market-data/instruments/exchange/BSE.json";
+        private String bfoInstrumentsUrl = ""; //"https://assets.upstox.com/market-data/instruments/exchange/BSE_FO.json";
+        private String mcxInstrumentsUrl = ""; //"https://assets.upstox.com/market-data/instruments/exchange/MCX.json";
         private long cacheExpiryMinutes = 720; // 12 hours
     }
 }

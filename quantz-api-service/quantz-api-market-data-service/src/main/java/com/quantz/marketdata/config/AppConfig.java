@@ -2,6 +2,7 @@ package com.quantz.marketdata.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.AllArgsConstructor;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,13 +13,10 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 
 @Configuration
+@AllArgsConstructor
 public class AppConfig {
 
     private final UpstoxProperties upstoxProperties;
-
-    public AppConfig(UpstoxProperties upstoxProperties) {
-        this.upstoxProperties = upstoxProperties;
-    }
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {

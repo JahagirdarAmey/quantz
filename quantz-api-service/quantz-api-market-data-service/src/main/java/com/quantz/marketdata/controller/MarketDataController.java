@@ -56,8 +56,7 @@ public class MarketDataController {
 
     @GetMapping("/scraping-history")
     public ResponseEntity<List<ScrapingMetadata>> getScrapingHistory() {
-        List<ScrapingMetadata> history = marketDataScraperService.getScrapingHistory();
-        return ResponseEntity.ok(history);
+        return ResponseEntity.ok(marketDataScraperService.getScrapingHistory());
     }
 
     @GetMapping("/scraping-history/latest")

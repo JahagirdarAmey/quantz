@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -199,6 +200,12 @@ public class UpstoxInstrumentServiceImpl implements UpstoxInstrumentService {
      * Load instruments from a URL
      */
     private List<UpstoxInstrument> loadInstrumentsFromUrl(String url) {
+
+        if (!StringUtils.hasText(url)) {
+            log.error("URL for loading instruments is null or empty.");
+            return Collections.emptyList();
+        }
+
         try {
             // Directly use RestTemplate instead of UpstoxHttpClient since these URLs don't require authentication
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
