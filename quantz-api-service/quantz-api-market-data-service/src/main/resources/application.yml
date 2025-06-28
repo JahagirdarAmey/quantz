@@ -1,0 +1,226 @@
+spring:
+  application:
+    name: quantz-api-market-data-service
+  
+  # Database Configuration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/quantz_market_data}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        generate_statistics: false
+    show-sql: ${JPA_SHOW_SQL:false}
+  
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:false}
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+# Management & Actuator Configuration
+management:
+  server:
+    port: 8080
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus,metrics,env,loggers"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+    info:
+      enabled: true
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+  
+  # Metrics Configuration
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 15s
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+        spring:
+          data:
+            repository:
+              invocations: true
+      percentiles:
+        http:
+          server:
+            requests: 0.5, 0.75, 0.95, 0.99
+      slo:
+        http:
+          server:
+            requests: 10ms,50ms,100ms,200ms,500ms,1s,2s,5s
+    tags:
+      application: ${spring.application.name}
+      environment: production
+      version: "@project.version@"
+      instance: "${HOSTNAME:unknown}"
+  
+  # Tracing Configuration
+  tracing:
+    enabled: true
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}  # 10% sampling in production
+    
+    # OpenTelemetry Configuration
+  otlp:
+    tracing:
+      endpoint: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:http://tempo:4317}
+      timeout: 10s
+      compression: gzip
+      headers:
+        authorization: "Bearer ${TRACING_AUTH_TOKEN:}"
+    
+    # Zipkin Configuration (fallback)
+    zipkin:
+      tracing:
+        endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://tempo:9411/api/v2/spans}
+        timeout: 10s
+
+  # Health Indicators
+  health:
+    disk-space:
+      enabled: true
+      threshold: 100MB
+    defaults:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.quantz: ${LOG_LEVEL_QUANTZ:INFO}
+    io.micrometer: ${LOG_LEVEL_MICROMETER:WARN}
+    org.springframework.web: ${LOG_LEVEL_SPRING_WEB:WARN}
+    org.springframework.security: WARN
+    org.hibernate: WARN
+    org.apache.http: WARN
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com:
+      quantz: ${LOG_LEVEL_QUANTZ:INFO}
+    org:
+      hibernate:
+        SQL: ${LOG_LEVEL_HIBERNATE_SQL:WARN}
+        type:
+          descriptor:
+            sql:
+              BasicBinder: WARN
+      springframework:
+        web: ${LOG_LEVEL_SPRING_WEB:WARN}
+        security: WARN
+    io:
+      micrometer: ${LOG_LEVEL_MICROMETER:WARN}
+    net:
+      ttddyy:
+        dsproxy:
+          listener: WARN
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] : %m%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} [%X{traceId:-},%X{spanId:-}] : %m%n"
+  file:
+    name: ${LOG_FILE_PATH:/app/logs/quantz-market-data.log}
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 3GB
+
+# Custom Application Properties
+quantz:
+  market-data:
+    version: "@project.version@"
+    build-time: "@maven.build.timestamp@"
+  
+  # Feature flags
+  features:
+    tracing-enabled: ${TRACING_ENABLED:true}
+    metrics-enabled: ${METRICS_ENABLED:true}
+    detailed-logging: ${DETAILED_LOGGING:false}
+  
+  # Performance tuning
+  performance:
+    connection-timeout: 30s
+    read-timeout: 60s
+    max-connections: 200
+    thread-pool-size: 50
+
+# Data Scraper Configuration
+data-scraper:
+  cron: ${DATA_SCRAPER_CRON:0 0 16 * * MON-FRI}
+  enabled: ${DATA_SCRAPER_ENABLED:true}
+  batch-size: ${DATA_SCRAPER_BATCH_SIZE:1000}
+  timeout-minutes: ${DATA_SCRAPER_TIMEOUT:30}
+
+# Upstox API Configuration
+upstox:
+  auth:
+    client-id: ${UPSTOX_CLIENT_ID:your-client-id-here}
+    client-secret: ${UPSTOX_CLIENT_SECRET:your-client-secret-here}
+    redirect-uri: ${UPSTOX_REDIRECT_URI:http://localhost:8080/api/upstox/auth/callback}
+  
+  base-url: ${UPSTOX_BASE_URL:https://api.upstox.com/v2}
+  
+  api:
+    connect-timeout-millis: ${UPSTOX_CONNECT_TIMEOUT:5000}
+    read-timeout-millis: ${UPSTOX_READ_TIMEOUT:30000}
+    max-requests-per-second: ${UPSTOX_MAX_REQUESTS_PER_SECOND:10}
+    max-retries: ${UPSTOX_MAX_RETRIES:3}
+    retry-delay-millis: ${UPSTOX_RETRY_DELAY:1000}
+  
+  instruments:
+    cache-expiry-minutes: ${UPSTOX_CACHE_EXPIRY:720}
+    bse-instruments-url: ${UPSTOX_BSE_URL:https://assets.upstox.com/market-data/instruments/exchange/BSE.json}
+    nse-instruments-url: ${UPSTOX_NSE_URL:https://assets.upstox.com/market-data/instruments/exchange/NSE.json}
+    nfo-instruments-url: ${UPSTOX_NFO_URL:https://assets.upstox.com/market-data/instruments/exchange/NSE_FO.json}
+    bfo-instruments-url: ${UPSTOX_BFO_URL:https://assets.upstox.com/market-data/instruments/exchange/BSE_FO.json}
+    mcx-instruments-url: ${UPSTOX_MCX_URL:https://assets.upstox.com/market-data/instruments/exchange/MCX.json}
+
+# Actuator Info
+info:
+  app:
+    name: ${spring.application.name}
+    version: "@project.version@"
+    description: "Quantz API Market Data Service"
+    build-time: "@maven.build.timestamp@"
+  system:
+    java:
+      version: ${java.version}
+      vendor: ${java.vendor}
+    os:
+      name: ${os.name}
+      version: ${os.version}
+      arch: ${os.arch}

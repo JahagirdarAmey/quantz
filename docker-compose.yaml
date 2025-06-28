@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: quantz-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quantz_market_data}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password_here}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"  # Changed to 5433 to avoid conflicts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - observability
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-quantz_market_data}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Quantz API Market Data Service
+  quantz-api-market-data-service:
+    build:
+      context: ./quantz-api-service/quantz-api-market-data-service
+      dockerfile: src/main/resources/Dockerfile
+    container_name: quantz-market-data
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-quantz_market_data}
+      - DATABASE_USERNAME=${POSTGRES_USER:-postgres}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-postgres_password_here}
+      - MANAGEMENT_OTLP_TRACING_ENDPOINT=http://tempo:4317
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus,metrics,env,loggers
+      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=${TRACING_SAMPLING_PROBABILITY:-0.1}
+      - LOG_LEVEL_ROOT=${LOG_LEVEL_ROOT:-INFO}
+      - LOG_LEVEL_QUANTZ=${LOG_LEVEL_QUANTZ:-INFO}
+      - LOG_LEVEL_MICROMETER=${LOG_LEVEL_MICROMETER:-WARN}
+      - UPSTOX_CLIENT_ID=${UPSTOX_CLIENT_ID}
+      - UPSTOX_CLIENT_SECRET=${UPSTOX_CLIENT_SECRET}
+      - UPSTOX_REDIRECT_URI=${UPSTOX_REDIRECT_URI:-http://localhost:8080/api/upstox/auth/callback}
+      - DATA_SCRAPER_ENABLED=${DATA_SCRAPER_ENABLED:-true}
+      - DATA_SCRAPER_CRON=${DATA_SCRAPER_CRON:-0 0 16 * * MON-FRI}
+      - JAVA_OPTS=${JAVA_OPTS:--Xms512m -Xmx2g -XX:+UseG1GC}
+    volumes:
+      - ./logs:/app/logs
+      - app_logs:/app/logs
+    depends_on:
+      - postgres
+      - tempo
+      - loki
+      - prometheus
+    networks:
+      - observability
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - observability
+
+  # Grafana - Visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - observability
+
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+
+  # Promtail - Log Shipper
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - observability
+
+  # Tempo - Distributed Tracing
+  tempo:
+    image: grafana/tempo:latest
+    ports:
+      - "3200:3200"
+      - "${TEMPO_OTLP_GRPC_PORT:-4318}:4317"  # Changed from 4317 to 4318
+      - "${TEMPO_OTLP_HTTP_PORT:-4319}:4318"  # Changed from 4318 to 4319
+      - "9411:9411"  # Zipkin
+      - "14268:14268" # Jaeger
+    volumes:
+      - ./tempo-config.yml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+    command: -config.file=/etc/tempo.yaml
+    networks:
+      - observability
+
+  # OpenTelemetry Collector (Optional but recommended)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    ports:
+      - "${OTEL_GRPC_PORT:-4320}:4317"   # Changed to avoid conflicts
+      - "${OTEL_HTTP_PORT:-4321}:4318"   # Changed to avoid conflicts
+      - "8889:8889"   # Prometheus metrics
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    command: ["--config=/etc/otel-collector-config.yml"]
+    depends_on:
+      - tempo
+      - prometheus
+    networks:
+      - observability
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
+  app_logs:
+  postgres_data:
+
+networks:
+  observability:
+    driver: bridge
